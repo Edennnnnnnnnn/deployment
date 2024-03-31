@@ -137,6 +137,14 @@ class PostDetailView(DetailView):
             return super().render_to_response(context, **response_kwargs)
 
 
+class HerokuBearerAuth(requests.auth.AuthBase):
+    def __init__(self, api_key):
+        self.api_key = api_key
+    def __call__(self, r):
+        r.headers.update({'Authorization': 'Bearer {}'.format(self.api_key)})
+        return r
+
+
 def indexView(request):
     # CCC
     """ * [GET] Get The Home Page """
@@ -178,7 +186,7 @@ def indexView(request):
                         posts_endpoint = f"{user.get('id')}/posts/"
                         print("user.get('id')", user.get('id'))
                         print("posts_endpoint", posts_endpoint)
-                        posts_response = requests.get(posts_endpoint, timeout=10)
+                        posts_response = requests.get(posts_endpoint, headers=headers, timeout=10)
                         if posts_response.status_code == 200:
                             posts = remove_bool_none_values(posts_response.json())
                             # print("\n>> post", posts)
@@ -222,13 +230,14 @@ def indexView(request):
             else:
                 # Authorization Message Header:
                 credentials = base64.b64encode(f'{host.username}:{host.password}'.encode('utf-8')).decode('utf-8')
-                auth_headers = {'Authorization': f'Basic {credentials}'}
-                print("auth_headers", auth_headers)
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+                    'auth': f'Basic {credentials}'}
                 authenticate_host(credentials)
 
                 # GET remote `users`:
                 users_endpoint = host.host + 'users/'
-                users_response = requests.get(users_endpoint, headers=auth_headers, timeout=10)
+                users_response = requests.get(users_endpoint, headers=headers, auth=HerokuBearerAuth("20b7400e-6a24-48fd-8d09-fb134d7e6427"), timeout=10)
                 print("users_endpoint", users_endpoint)
                 print("users_response", users_response)
                 if users_response.status_code == 200:
@@ -249,7 +258,7 @@ def indexView(request):
                         posts_endpoint = f"{users_endpoint}{user.get('username')}/posts/"
                         print("user.get('username')", user.get('username'))
                         print("posts_endpoint", posts_endpoint)
-                        posts_response = requests.get(posts_endpoint, headers=auth_headers, timeout=10)
+                        posts_response = requests.get(posts_endpoint, headers=headers, auth=HerokuBearerAuth("20b7400e-6a24-48fd-8d09-fb134d7e6427"), timeout=10)
                         if posts_response.status_code == 200:
                             posts = remove_bool_none_values(posts_response.json().get('posts'))
                             # print("\n>> post", posts)
@@ -1253,7 +1262,7 @@ class UsersOpenEndPt(viewsets.ModelViewSet):
     serializer_class = UserSerializer
 
     def list(self, request, *args, **kwargs):
-        auth_header = request.headers.get('Authorization')
+        auth_header = request.headers.get('auth')
         if auth_header:
             parts = auth_header.split(' ', 1)
             if len(parts) == 2 and parts[0].lower() == 'basic':
@@ -1266,7 +1275,7 @@ class UsersOpenEndPt(viewsets.ModelViewSet):
 
 class UserPostsOpenEndPt(APIView):
     def get(self, request, username):
-        auth_header = request.headers.get('Authorization')
+        auth_header = request.headers.get('auth')
         print("auth_header", auth_header)
         if auth_header:
             parts = auth_header.split(' ', 1)
