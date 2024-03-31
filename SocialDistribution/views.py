@@ -1346,9 +1346,6 @@ def followRequesting(request, remoteNodename, requester_username, proj_username)
                 "id": proj_user.otherURL
             }
         }
-        print("\n\n\n fucku")
-        print(body)
-        print("\n\n\n")
 
         response = requests.post(
             remoteInbox,
@@ -1442,11 +1439,11 @@ def followRequesting(request, remoteNodename, requester_username, proj_username)
         print(remoteNodename)
         print(remoteInbox)
         users_endpoint = host.host + 'authors/'
+        credentials = base64.b64encode(f'{host.username}:{host.password}'.encode('utf-8')).decode('utf-8')
         headers = {
             'Content-Type': 'application/json',
             'X-CSRFToken': get_token(request),
-            'username': f'{host.username}',
-            'password': f'{host.password}'
+            'Authorization': f'Basic {credentials}'
         }
         body = {
             "message_type": "FR",
