@@ -1,0 +1,78 @@
+:root {
+    --text-color: #ffffff;
+    --bg-color: rgba(255, 255, 255, 0.39);
+    --btn-hover-color: #2f83cc;
+    --btn-bg-color: #2fcccc;;
+    --modal-bg-color: rgba(0,0,0,0.4);
+    --modal-content-bg-color: rgba(254, 254, 254, 0.9);
+    --separator-color: #ccc;
+    --icon-hover-bg-color: rgba(202, 202, 202, 0.6);
+    --icon-color: #2fcccc;
+    --post-btn-bg-color: #2fcccc;
+}
+
+/* Base Styles */
+body {
+    background: url("../images/index-bg.jpg");
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    position: relative;
+    display: flex;           
+    flex-direction: column; 
+    margin: 0;
+    padding-top: 60px;
+}
+
+
+a {
+    text-decoration: none;
+    color: black;
+}
+
+#post-container {
+    width: 100%; /* 确保post-container宽度适应其父容器 */
+}
+
+.content {
+    width: 100%; /* 使content宽度为post-container的100% */
+    max-width: 100%; /* 防止content超出post-container宽度 */
+    box-sizing: border-box; /* 确保padding和border包含在宽度内 */
+    margin: 0 auto; /* 可选，如果你想让content在post-container中居中 */
+}
+
+.content img {
+    max-width: 100%; /* 图片最大宽度为content的宽度 */
+    height: auto; /* 高度自动调整以保持图片原始宽高比 */
+}
+
+/* Floating Action Button */
+#floating-button {
+    bottom: 100px;
+    right: 100px;
+    width: 70px;
+    height: 70px;
+    position: fixed;
+    font-size: 50px;
+    line-height: 70px;
+    text-align: center;
+    border-radius: 50%;
+    background-image: linear-gradient(45deg, rgba(25, 213, 150, 0.8) 0%, rgba(78, 190, 246, 0.8) 100%);
+    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: transform 0.1s ease-in-out;
+    cursor: pointer;
+    color: #dddddd;
+    text-decoration: none;
+    border: none;
+}
+#floating-button:hover {
+    transform: scale(1.1);
+}
+
+.corner-icon {
+     
+    position: relative; 
+    margin-left: auto;
+    width: auto;
+}

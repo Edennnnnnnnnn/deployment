@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>User Profile Page</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link
+            rel="stylesheet"
+            type="text/css"
+            href="{% static 'css/profile.css' %}"
+    />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/navbar.css">
+
+</head>
+
+<style>
+    a,
+    a:link,
+    a:visited,
+    a:hover,
+    a:active {
+        text-decoration: none;
+        color: inherit;
+
+    }
+
+    .profile-photo {
+        width: 80px;
+        height: 80px;
+    }
+
+    .post-info {
+        margin-left: 10px;
+    }
+</style>
+
+<body>
+    {% include 'navbar.html' %}
+
+<div class="button-container">
+    <!-- <button class="back-button" onclick="history.back()">Back</button> -->
+    <form action="{% url 'PAGE_Logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="logout-button">Log Out</button>
+    </form>
+</div>
+
+    <div class="post-container">
+        <div class="recent-posts">
+            <!-- This section should be populated with actual post data -->
+            {% for post in posts %}
+                <div class="post">
+                    {% if post.image %}
+                        <img src="{{ post.image.url }}" alt="" width="120" height="120"/>
+                    {% endif %}
+                    <div class="post-info">
+                        <a href="{% url 'PAGE_postDetail' post_id=post.id %}" id="none"
+                        ><h3 class="post-title">{{ post.title }}</h3>
+                        </a>
+                        <p>{{ post.content |slice:":30" }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+<script src="{% static 'js/index.js' %}"></script>
+<script src="{% static 'js/posting.js' %}"></script>
+<script src="{% static 'js/follow.js' %}"></script>
+<script src="{% static 'js/profile.js' %}"></script>
+<script src="{% static 'js/editing.js' %}"></script>
+
+</body>
+</html>

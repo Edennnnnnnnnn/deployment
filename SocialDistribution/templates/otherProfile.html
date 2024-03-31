@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>@{{ username }} - Profile</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link
+            rel="stylesheet"
+            type="text/css"
+            href="{% static 'css/profile.css' %}"
+    />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/navbar.css' %}">
+
+</head>
+
+
+
+<body>
+{% include 'navbar.html' %}
+    
+<div class="button-container"></div>
+<div class="profile-container">
+    <div class="profile-left">
+        <div class="profile-header">
+            
+            <img
+                    class="profile-avatar"
+                    src="{{ user.avatar.url }}"
+                    alt="Profile Picture"
+            />
+        
+            
+            <div id="profile-info" class="profile-info" style="text-align: center">
+                <div class="username" id="username">{{ user.username }}</div>
+                <div class="email" id="email">Email: {{ user.email }}</div>
+                <p class="bio-container" id="user-bio">{{ user.bio }}</p>
+                
+                
+            </div>
+            <div class="follow-container">
+                <a href="{% url 'PAGE_FollowersList' username=user.username %}">
+                    <button id="follower-btn" class="top-button followers-button">Followers</button>
+                </a>
+                <a href="{% url 'PAGE_FollowingList' username=user.username %}">
+                    <button id="following-btn" class="top-button following-button">Following</button>
+                </a>
+            </div>
+            <button id="follow-btn" data-username="{{ user.username }}">Follow</button>
+            <button id="unfollow-btn" data-username="{{ user.username }}">Unfollow</button>
+            <div id="relation"></div>
+
+        </div>
+
+        
+    </div>
+    <div class="post-container">
+        <div class="recent-posts" id="recent-posts" data-username="{{ user.username }}">
+            <!-- This section should be populated with actual post data -->
+            
+        </div>
+    </div>
+</div>
+
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+<script type="module" src="{% static 'js/index.js' %}"></script>
+<script src="{% static 'js/posting.js' %}"></script>
+<script src="{% static 'js/post_detail.js' %}"></script>
+<script src="{% static 'js/follow.js' %}"></script>
+<script type="module" src="{% static 'js/profile.js' %}"></script>
+
+</body>
+</html>

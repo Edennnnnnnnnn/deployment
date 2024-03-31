@@ -1,0 +1,306 @@
+/* Modal Styles */
+
+:root {
+    --text-color: #ffffff;
+    --bg-color: rgba(255, 255, 255, 0.39);
+    --btn-hover-color: #2f83cc;
+    --btn-bg-color: #2fcccc;;
+    --modal-bg-color: rgba(0,0,0,0.4);
+    --modal-content-bg-color: rgba(254, 254, 254, 0.9);
+    --separator-color: #ccc;
+    --icon-hover-bg-color: rgba(202, 202, 202, 0.6);
+    --icon-color: #2fcccc;
+    --post-btn-bg-color: #2fcccc;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: var(--modal-bg-color);
+}
+
+.options-container {
+    position: fixed;
+    bottom: 200px;
+    right: 100px;
+    
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 2;
+    
+}
+
+.option-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    border: none;
+    background-color: transparent; 
+    background: none; 
+    cursor: pointer;
+    margin: 5px 0; /* Add space between buttons */
+    padding: 5px;  
+}
+.option-button:hover {
+    background-color: rgba(205, 204, 204, 0.648);
+    border-radius: 3px;
+    transform: translateX(3%); 
+}
+
+
+/* Text post css */
+
+.modal-content {
+    background-color: var(--modal-content-bg-color);
+    padding: 20px;
+    border: 1px solid #888;
+    margin: 8% auto auto auto;
+    flex-direction: column;
+    width: 50%;
+    border-radius: 15px;
+    height: auto;
+}
+
+.close {
+    color: #aaa;
+    float: left;
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0px 10px 10px 10px;
+}
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Utility Classes for Spacing and Text */
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mt-4 { margin-top: 1.5rem; }
+.mt-5 { margin-top: 3rem; }
+
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mb-5 { margin-bottom: 3rem; }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.text-justify { text-align: justify; }
+
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        height: auto;
+    }
+    .navbar li {
+        padding: 8px 0;
+    }
+    .post {
+        width: 90%;
+    }
+    #floating-button {
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        font-size: 30px;
+        line-height: 50px;
+    }
+}
+
+.title-input {
+    width: 100%;
+    height: 36px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: none;
+    font-family: inherit;
+    font-size: 20px
+}
+
+
+#contentInput {
+    width: 100%;
+    height: 300px;
+    border-radius: 10px;
+    resize: none;
+    border: none;
+    font-family: inherit;
+    font-size: 16px;
+    
+}
+
+#titleInput:focus,
+#contentInput:focus,
+#visibility:focus,
+#content_type:focus {
+    /* no border when focus on  */
+    border: none;
+    outline-color: #2fcccc;
+}
+
+
+ /* the container that include upload image, visibility select and btns */
+.submit-container {
+    position: relative;
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.submit-container .left {
+    width: 60%;
+    margin-right: auto; 
+    align-items: center;
+    display: flex;
+}
+.left > * {
+    margin-right: 10px; 
+}
+.submit-container .right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 40%;
+    margin-left: auto;
+    margin-right: 20px;
+}
+.right > * {
+    margin-right: 10px; 
+}
+
+
+
+.select {
+    border: none;
+    cursor: pointer;
+    
+    margin-right: 20px;
+}
+#visibility {
+    border: none;
+    cursor: pointer;
+    margin-top: 10px;
+    margin-right: 20px;
+}
+
+#content_type {
+    margin-top: 10px;
+    border: none;
+    cursor: pointer;
+}
+#newPostForm {
+    width: 100%;
+    height: auto;
+}
+
+.post-button {
+    background-color: var(--btn-bg-color);
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.post-button:active,
+.post-button:hover {
+    background-color: var(--btn-hover-color);
+}
+
+/* Image Post css */
+
+.upload-icon {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    margin: auto 20px;
+    margin-top: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-icon:hover {
+    cursor: pointer;
+    background-color: rgba(202, 202, 202, 0.6); 
+    border-radius: 50%; 
+}
+
+.upload-icon ion-icon {
+    color: #2fcccc; 
+    font-size: 20px; 
+    position: relative;
+    top: 10px;
+}
+
+.preview-contaienr {
+    margin: 10px 0;
+    height: auto;
+}
+
+.preview-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-right: 10px;
+    padding: 10px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease; 
+}
+
+.preview-wrapper:hover {
+    transform: scale(1.05);
+}
+
+.image-preview {
+    width: auto; 
+    max-width: 150px;
+    height: auto;
+    max-height: 150px;
+}
+.image-preview:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
+}
+
+.delete-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    cursor: pointer;
+    border-radius: 50%;
+    border: none;
+    padding: 5px;
+    background-color: transparent;
+    transition: transform 0.3s ease, box-shadow 0.3s ease; 
+}
+.delete-btn ion-icon {
+    color: rgb(255, 0, 0);
+    font-size: 28px;
+    background-color: #fff;
+    border-radius: 50%;
+  }
+
+.delete-btn ion-icon:hover {
+    border-radius: 50%;
+    transform: scale(1.05); 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
+    color: rgb(255, 89, 89);
+}

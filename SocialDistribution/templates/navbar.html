@@ -1,0 +1,29 @@
+<nav class="navbar">
+    <ul>
+        <li><a href="/" title="Public Posts">
+            <ion-icon name="home" size="large"></ion-icon>
+        </a></li>
+        {% if request.user.is_authenticated %}
+            <li><a href="{% url 'PAGE_FriendPosts' username=request.user.username %}" title="Following Posts">
+                <ion-icon name="people" size="large"></ion-icon></a>
+            </li>
+            <li><a href="{% url 'PAGE_Inbox' username=request.user.username %}" title="Inbox">
+                <ion-icon name="mail" size="large" target="_blank"></ion-icon></a>
+            </li>
+            <li><a href="{% url 'PAGE_Profile' username=request.user.username %}" title="{{ request.user.username }}'s Profile">
+                <img class="user-avatar" src="{{ request.user.avatar.url }}" alt="User avatar"></a>
+            </li>
+            
+        {% else %}
+            <li><a href="login/" title="Following Posts">
+                <ion-icon name="people" size="large"></ion-icon>
+            </a></li>
+            <li><a href="login/" title="Inbox">
+                <ion-icon name="mail" size="large"></ion-icon>
+            </a></li>
+            <li><a href="login/">
+                <ion-icon name="person" size="large" title="Profile"></ion-icon>
+            </a></li>
+        {% endif %}
+    </ul>
+</nav>

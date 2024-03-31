@@ -1,0 +1,228 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Page</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'css/post_detail.css' %}">
+    <link rel="stylesheet" href="{% static 'css/newPostModal.css' %}">
+</head>
+<body data-current-user="{{ request.user.username }}">
+<div id="notification" class="notification"></div>
+<div class="post-container" data-post-id="{{ post.id }}">
+    <div class="back-button-container">
+        <button onclick="goBackAndRefresh()" class="back-button">
+            <ion-icon size="small" name="chevron-back-outline" style="margin-right: 8px;"></ion-icon>
+            Back
+        </button>
+        {% if request.user == post.author and not post.is_draft %}
+            <button id="more-options-button" class="more-options-button">
+                <ion-icon size="large" name="ellipsis-horizontal" style="cursor: pointer;"></ion-icon>
+            </button>
+        {% endif %}
+    </div>
+
+    <div id="options-container" class="modify-options-container" style="display: none;">
+        <button class="option-button" id="edit-btn">
+            <ion-icon size="small" name="create-outline" style="margin-right: 8px;"></ion-icon>
+            Edit
+        </button>
+        <button class="option-button" data-post-id="{{ post.id }}" onclick="deletePost(this)">
+            <ion-icon size="small" name="trash-outline" style="margin-right: 8px;"></ion-icon>
+            Delete
+        </button>
+        <!-- Add more buttons as needed -->
+    </div>
+
+    <div class="user-info">
+        {% if post.author.avatar %}
+            <img src="{{ post.author.avatar.url }}" alt="User Avatar" class="user-avatar" width="50" height="50"
+                 onclick="redirectProfile()">
+        {% else %}
+            <img src="{% static 'images/default_avatar.png' %}" alt="Default Avatar" class="user-avatar" width="50"
+                 height="50" onclick="redirectProfile()">
+        {% endif %}
+        <span class="user-name" id="userName" onclick="redirectProfile()">{{ post.author.username }}</span>
+        <span class="post-date">{{ post.date_posted|date:"Y-m-d" }}</span>
+        {% if post.content_type == 'COMMONMARK' %}
+            <ion-icon name="logo-markdown" style="padding: 0 10px;"></ion-icon>
+        {% endif %}
+        {% if post.visibility == 'FRIENDS' %}
+            <ion-icon name="people" style="padding: 0 10px;"></ion-icon>
+        {% elif post.visibility == 'PRIVATE' %}
+            <ion-icon name="eye-off" style="padding: 0 10px;"></ion-icon>
+        {% endif %}
+
+    </div>
+    <h1 class="post-title" id="postTitle">{{ post.title }}</h1>
+    <div class="scrollable-content">
+        <span id="postId" style="display: none">{{ post.id }}</span>
+        <!-- Load text content -->
+
+        <div class="post-content" id="postContent">
+            {% if post.content %}
+                {% if post.content_type != 'COMMONMARK'%}
+                    {{ post.content|safe }}
+                {% else %}
+                    {{ post.content_as_html|safe }}
+                {% endif %}
+            {% endif %}
+        </div>
+        {% if post.image_data %}
+        <div class="image_container" id="imageContainer">
+            <!-- Load image content -->
+        </div>
+        {% endif %}        
+
+        <div class="post-actions">
+            {% if post.is_draft %}
+                <button id="edit-button" class="action" onclick="EditPost()" type="button">
+                <span class="material-symbols-outlined">
+                    <ion-icon name="create-outline">Edit</ion-icon>
+                </span>
+                    Edit
+                </button>
+                <button id="delete-button" class="action" onclick="deletePost(this)" data-post-id="{{ post.id }}">
+                    <span class="material-symbols-outlined"><ion-icon name="trash-outline">Delete</ion-icon></span>
+                    Delete
+                </button>
+                <button id="send-button" class="action" onclick="sendPost()">
+                    <span class="material-symbols-outlined"><ion-icon name="send-outline">Send</ion-icon></span>
+                    Post
+                </button>
+            {% else %}
+                {% if post.visibility != 'PRIVATE' %}
+                    {% if post.visibility == 'PUBLIC' %}
+                        <button id="share-button" class="action">
+                            <ion-icon size="small" name="share-outline" style="margin-right: 8px;"></ion-icon>
+                            Share
+                        </button>
+                    {% endif %}
+                    <button id="comment-button" class="action">
+                        <ion-icon size="small" name="chatbox-ellipses-outline" style="margin-right: 8px;"></ion-icon>
+                        Comment
+                    </button>
+
+                    <button id="like-button" class="action">
+                        <ion-icon id="like-icon" size="small" name="heart-outline"
+                                  style="margin-right: 8px;"></ion-icon>
+                        Like
+                        <span id="like-count">{{ likes_count }}</span>
+                    </button>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- <div id="comment-form" class="comment-form" style="display: none;">
+            <textarea id="comment-input" placeholder="Add a comment..." rows="1"></textarea>
+            <button id="submit-comment" class="post-button">Comment</button>
+            <button id="cancel-comment" class="post-button">Cancel</button>
+        
+        </div> -->
+        <div id="comment-form" class="comment-form" style="display: none;">
+            <textarea id="comment-input" placeholder="Add a comment..." rows="1"></textarea>
+            <div class="comment-form-actions">
+                <button id="submit-comment" class="post-button">Comment</button>
+                <button id="cancel-comment" class="post-button">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Load post comments -->
+        {% if not post.is_draft and post.visibility != 'PRIVATE' %}
+            <div class="comments-section">
+                <h2>Comments:</h2>
+                <div id="comments-container"></div>
+            </div>
+        {% endif %}
+    </div>
+
+
+</div>
+
+
+<div id="shareModal" class="modal">
+    <div class="modal-content" style="height: 200px">
+        <span class="close" onclick="closeShareModal()">&times;</span>
+        <h2 style="margin: 0">Share This Post</h2>
+        <textarea style="height:100px" id="shareText" placeholder="Add your thoughts to this post..."></textarea>
+        <button id="confirmShare" class="share-button">Share</button>
+    </div>
+</div>
+
+<!-- Edit madal -->
+<div id="editModal" class="modal" style="display: none">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <form id="editForm">
+            <input class="title-input" id="titleInput" type="text" name="title" placeholder="Title">
+            <textarea id="contentInput" name="content" placeholder="Tell Something New..."></textarea>
+
+            <div class="submit-container">
+                <div class="left">
+                    <input type="checkbox" id="content_type" name="content_type">
+                    <label for="content_type" style="font-size: 14px; margin-top: 10px;">Use CommonMark</label>
+
+                    <select name="visibility" id="visibility">
+                        <option value="PUBLIC" selected>Public</option>
+                        <option value="FRIENDS">Friends-Only</option>
+                        <option value="PRIVATE">Private</option>
+                    </select>
+                </div>
+                <div class="right">
+                    <button class="post-button" type="submit">Save Draft</button>
+                    <button class="post-button" type="submit">Save Changes</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="editImageModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <form id="editImageForm" enctype="multipart/form-data">
+            <input class="title-input" id="titleInput2" type="text" name="title" placeholder="Title">
+            <!-- Preview image -->
+            <div class="preview-contaienr" id="imagePreviewContainer">
+                <!-- Preview images -->
+            </div>
+
+            <div class="submit-container">
+                <div class="left">
+                    <label for="imageUpload" class="upload-icon">
+                        <ion-icon name="image"></ion-icon>
+                    </label>
+                    <!-- Upload image -->
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                    <select name="visibility" id="visibility">
+                        <option value="PUBLIC" selected>Public</option>
+                        <option value="FRIENDS">Friends-Only</option>
+                        <option value="PRIVATE">Private</option>
+                    </select>
+                </div>
+
+                <div class="right">
+
+                    <button class="post-button" type="submit">Save Draft</button>
+                    <button class="post-button" type="submit">Save Changes</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript">
+    const currentPostTitle = "{{ post.title }}";
+    // const currentPostContent = `{{ post.content }}`;
+</script>
+
+<script src="{% static 'js/common.js' %}"></script>
+<script src="{% static 'js/post_detail.js' %}"></script>
+<script src="{% static 'js/editing.js' %}"></script>
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>People List</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/peopleList.css' %}">
+
+
+</head>
+<body>
+
+<button class="back-button" onclick="history.back()">Back</button>
+
+<ul class="friends-list">
+    <!--followersList.js loads in data here-->
+</ul>
+
+<!--
+<li class="person">
+    <img class="person-photo" src="person1.jpg" alt="Profile Picture"></img>
+    <p class="person-name">Username</p>
+ </li>
+-->
+
+ <script src="{% static 'js/friendsList.js' %}"></script>
+
+</body>
+</html>

@@ -1,0 +1,62 @@
+:root {
+    --text-color: #ffffff;
+    --bg-color: rgba(255, 255, 255, 0.39);
+    --btn-hover-color: #2f83cc;
+    --btn-bg-color: #2fcccc;;
+    --modal-bg-color: rgba(0,0,0,0.4);
+    --modal-content-bg-color: rgba(254, 254, 254, 0.9);
+    --separator-color: #ccc;
+    --icon-hover-bg-color: rgba(202, 202, 202, 0.6);
+    --icon-color: #2fcccc;
+    --post-btn-bg-color: #2fcccc;
+}
+
+/* Base Styles */
+body {
+    background: url("../images/friendPosts-bg.jpg");
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    position: relative;
+    display: flex;           
+    flex-direction: column; 
+    margin: 0;
+    padding-top: 60px;
+}
+
+a {
+    text-decoration: none;
+    color: black;
+}
+
+/* Floating Action Button */
+#floating-button {
+    bottom: 100px;
+    right: 100px;
+    width: 70px;
+    height: 70px;
+    position: fixed;
+    font-size: 50px;
+    line-height: 70px;
+    text-align: center;
+    border-radius: 50%;
+    background-image: linear-gradient(45deg, rgba(122, 25, 213, 0.8) 0%, rgba(246, 78, 78, 0.8) 100%);
+    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: transform 0.1s ease-in-out;
+    cursor: pointer;
+    color: #dddddd;
+    text-decoration: none;
+    border: none;
+    z-index: 1;
+}
+
+#floating-button:hover {
+    transform: scale(1.1);
+}
+
+.corner-icon {
+    position: relative; 
+    margin-left: auto;
+    width: auto;
+}

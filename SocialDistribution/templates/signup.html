@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup Page</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/signup.css' %}">
+</head>
+
+<body>
+<div class="navbar">
+    <a href="/">&#20 Home Page</a>
+    <a href="../signup/">&#20 Signup Page</a>
+    <a href="../login/"> Account existed? &#20 Log In</a>
+</div>
+<div class="signup-container">
+    <br>
+    <h1 class="signup-title">- Welcome Aboard - </h1>
+    <h2 class="signup-comment"> Please sign up to join our community!! </h2>
+    <form action="{% url 'PAGE_Signup' %}" method="post">
+        {% csrf_token %}
+        <input type="text" class="signup-input" name="username" placeholder="Username" required autofocus>
+        <input type="email" class="signup-input" name="email" placeholder="Email Address" required>
+        <input type="password" class="signup-input" name="password1" placeholder="Password" required>
+        <input type="password" class="signup-input" name="password2" placeholder="Password confirmation" required>
+        <button class="signup-button" type="submit">Sign up</button>
+        {% if messages %}
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+        
+    </form>
+</div>
+</body>
+
+</html>

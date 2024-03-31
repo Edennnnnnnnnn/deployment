@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>@{{ username }} - Profile</title>
+    <link
+            rel="stylesheet"
+            type="text/css"
+            href="{% static 'css/profile.css' %}"
+    />
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/navbar.css' %}">
+
+</head>
+
+<body>
+
+{% include 'navbar.html' %}
+
+<div class="button-container">
+    <!-- <button class="back-button" onclick="history.back()">Back</button> -->
+    <form action="{% url 'PAGE_Logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="logout-button">Log Out</button>
+    </form>
+    <form action="{% url 'PAGE_AddConnect' %}" method="get">
+        {% csrf_token %}
+        <button type="submit" id="ntn-button">Add Node Connection</button>
+    </form>
+    {% if request.user == user and request.user %}
+        <div>
+            <button><a href="{% url 'API_AuthorDraft' username=user.username %}" title="Post Draft">
+                <ion-icon name="file-tray-full-outline">Post Draft</ion-icon>
+            </a></button>
+        </div>
+    {% endif %}
+</div>
+<div class="profile-container">
+    <div class="overlay" id="overlay" style="display: none;"></div>
+    <div class="profile-left">
+
+        <div class="profile-header">
+        
+            <button class="profile-edit-btn" id="profile-edit-btn" title="Edit Profile" > 
+                <ion-icon name="create-outline"></ion-icon></a>
+            </button>
+            <img
+                    class="profile-avatar"
+                    src="{{ user.avatar.url }}"
+                    onclick="document.getElementById('avatarInput').click()"
+                    alt="Profile Picture"
+            />
+            
+            <form
+                    method="post"
+                    enctype="multipart/form-data"
+                    style="display: none"
+                    action="upload-avatar/"
+            >
+                {% csrf_token %}
+                <input
+                        type="file"
+                        name="avatar"
+                        id="avatarInput"
+                        accept="image/*"
+                        onchange="this.form.submit()"
+                />
+            </form>
+            <div id="profile-info" class="profile-info" style="text-align: center"> 
+                <div class="username" id="username" >{{ user.username }}</div>
+                <input type="text" id="edit-username" onblur="handleUserNameBlur()" style="display: none">
+                <div class="email" id="email">Email: {{ user.email }}</div>
+                <div class="github" id="github">Github: {{ user.github_username }}</div>
+
+                <p><strong>Bio:</strong> <span id="user-bio">{% if user.bio %}{{ user.bio }}{% else %}Add your bio here...{% endif %}</span></p>
+                <!-- <p class="bio-container" id="user-bio">{{ user.bio }}</p> -->
+                <form action="update-bio/" method="post" style="display: none;">
+                    {% csrf_token %}
+                    <textarea
+                            class="bio-container"
+                            id="edit-user-bio"
+                            name="bio"
+                            type="text"
+                            placeholder="Add your bio here..."
+                    >{{ user.bio }}</textarea>
+                    <button class="saveButton" type="submit">Save</button>
+                </form>
+
+                <a href="{% url 'PAGE_LinkGithub' username=user.username %}">
+                    <button type="button" id="github-btn" class="github-button">GitHub</button>
+                </a>
+                
+            </div>
+            <div class="follow-container">
+                <a href="{% url 'PAGE_FollowersList' username=user.username %}">
+                    <button id="follower-btn" class="followers-button">Followers</button>
+                </a>
+                <a href="{% url 'PAGE_FollowingList' username=user.username %}">
+                    <button id="following-btn" class="following-button">Following</button>
+                </a>
+            </div>
+            
+            
+            <button id="follow-btn" data-username="{{ user.username }}" style="display: none;">follow</button>
+            <button id="unfollow-btn" data-username="{{ user.username }}" style="display: none;">Unfollow</button>
+
+            
+        </div>
+
+        <div class="friend-list" id="friendList" data-username="{{ user.username }}">
+            <p><strong>Friends List:</strong></p>
+            <!-- Load friend list     -->  
+        </div>
+        
+    </div>
+    <div class="post-container">
+            
+        <div class="recent-posts" id="recent-posts" data-username="{{ user.username }}">
+            <!-- This section should be populated with actual post data -->
+            
+        </div>
+    </div>
+</div>
+
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+<script type="module" src="{% static 'js/index.js' %}"></script>
+<script src="{% static 'js/posting.js' %}"></script>
+<script src="{% static 'js/post_detail.js' %}"></script>
+<script type="module" src="{% static 'js/profile.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var editButton = document.querySelector('.profile-edit-btn');
+        var overlay = document.getElementById('overlay');
+
+        editButton.addEventListener('click', function() {
+            overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none'; 
+            editInput();
+        });
+    });
+
+    function editInput() {
+        var bioText = document.getElementById('user-bio');
+        var bioEdit = document.getElementById('edit-user-bio');
+        var form = bioEdit.closest('form');
+
+        if (bioText.style.display === 'none') {
+            bioText.style.display = 'block';
+            form.style.display = 'none';
+        } else {
+            bioText.style.display = 'none';
+            form.style.display = 'block';
+            editUserName();
+            bioEdit.value = bioText.textContent;
+        }
+    }
+</script>
+
+</body>
+</html>

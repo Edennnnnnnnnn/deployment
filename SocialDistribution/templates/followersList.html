@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <title>Followers</title> -->
+    <title>@{{ username }} - Followers</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/peopleList.css' %}">
+
+
+</head>
+<body>
+
+    <div class="people-container">
+        <button class="back-button" onclick="history.back()">Back</button>
+        <ul id="followers-list">
+            <!--followersList.js loads in data here-->
+        </ul>
+    </div>
+
+
+ <script src="{% static 'js/followersList.js' %}"></script>
+
+</body>
+</html>

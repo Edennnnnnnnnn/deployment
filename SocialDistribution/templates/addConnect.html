@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Node Connection</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/addConnect.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/postListContent.css' %}">
+</head>
+
+<body>
+<div class="navbar">
+    <a href="/">&#20 Home Page</a>
+</div>
+
+
+<div class="ac-container">
+    <br>
+    <h1 class="ac-title">- Let's Build SocialDistrib!! - </h1>
+    
+    <h2 class="ac-comment"> Please add a remote node connection </h2>
+    <form>
+        {% csrf_token %}
+        <input type="url" class="ac-input" name="targetHost" placeholder="URL for TargetHost (Remote)" required autofocus>
+        <input type="url" class="ac-input" name="targetOpenapi" placeholder="URL for TargetHost OpenAPI (Remote)" required autofocus>
+        <input type="text" class="ac-input" name="username" placeholder="Username (Connection Key)" required
+               autofocus>
+        <input type="password" class="ac-input" name="password" placeholder="Password (Connection Key)" required>
+        <h2 class="ac-comment"> Please provide local info for remote tracking </h2>
+        <input type="text" class="ac-input" name="localName" placeholder="Our Server Name (Local)" required>
+        
+        <button type="submit" class="ac-button">Connect Node</button>
+        {% if form.non_field_errors %}
+            <div class="error">
+                <p>Please enter correct information.</p>
+            </div>
+        {% endif %}
+    </form>
+</div>
+
+<div id="acSearch" class="ac-search-container">
+    <h2 id="searchInstruction" class="ac-comment"> - Search Users From Remote Nodes - </h2>
+    <div class="ac-filters">
+        <form id="filter-form">
+            <select name="filter" id="filter"></select>
+            <button id="typeSubmit" type="submit">Filter</button>
+        </form>
+    </div>
+    <div class="search-bar">
+        <ion-icon name="search-outline" style="font-size: 26px; margin: 5px; color: rgb(97, 97, 97);"></ion-icon>
+        <form id="search-form" action="/search" method="get">
+            <input type="hidden" name="user1_id" value="{{ request.user.username }}">
+            <input type="text" name="user2_id" placeholder="Search by external username">
+        </form>
+    </div>
+
+</div>
+
+<script src="{% static 'js/addConnect.js' %}"></script>
+<script src="{% static 'js/searchRemote.js' %}"></script>
+</body>
+
+</html>
+

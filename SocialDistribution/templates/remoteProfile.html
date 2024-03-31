@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title> Profile (Remote)</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link
+            rel="stylesheet"
+            type="text/css"
+            href="{% static 'css/profile.css' %}"
+    />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/navbar.css' %}">
+
+</head>
+
+
+
+<body>
+{% include 'navbar.html' %}
+    
+<div class="button-container"></div>
+<div class="profile-container">
+    <div class="profile-left">
+        <div class="profile-header">
+            
+            
+            <div id="profile-info" class="profile-info" style="text-align: center">
+                <div class="username" id="username">{{ user.username }}</div>
+                <div class="email" id="email">- Remote User from Server @{{ user.hostname }} - </div>
+                <br>
+                <div class="email" id="email">| {{ user.host }} |</div>
+
+            </div>
+            <div class="follow-container">
+                <button id="follow-btn" data-username="{{ user.username }}">Follow</button>
+                <button id="unfollow-btn" data-username="{{ user.username }}">Unfollow</button>
+            </div>
+            <div id="relation"></div>
+
+        </div>
+
+        
+    </div>
+</div>
+
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+
+
+<script src="{% static 'js/remoteProfile.js' %}"></script>
+
+</body>
+</html>
