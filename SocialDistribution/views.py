@@ -1078,7 +1078,7 @@ class CreateMessageAPIView(APIView):
     # permission_classes = [IsAuthenticated]
     def post(self, request, format=None):
         print(request.data)
-        request.data.owner = get_object_or_404(User, username=request.data.owner)
+        request["owner"] = get_object_or_404(User, username=request["owner"])
         serializer = MessageSuperSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(owner=request.user)
