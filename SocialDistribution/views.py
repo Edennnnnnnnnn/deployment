@@ -1086,14 +1086,14 @@ class CreateMessageAPIView(APIView):
 
 class CreateRemoteMessageAPIView(APIView):
     def post(self, request, format=None):
-        owner = get_object_or_404(User, username=request["owner"])
+        owner = get_object_or_404(User, username=request.data.get("owner"))
         print("owner", owner)
         message_super = MessageSuper(
             owner=owner,
             #post=post,
             message_type="FR",
-            content=request["content"],
-            origin=request["origin"]
+            content=request.data.get("content"),
+            origin=request.data.get("origin")
         )
         print("message_super", message_super)
         message_super.save()
