@@ -1086,20 +1086,18 @@ class CreateMessageAPIView(APIView):
 
 class CreateRemoteMessageAPIView(APIView):
     def post(self, request, format=None):
-        print(request.data)
-        try:
-            owner = get_object_or_404(User, username=request["owner"])
-            message_super = MessageSuper(
-                owner=owner,
-                #post=post,
-                message_type="FR",
-                content=request["content"],
-                origin=request["origin"]
-            )
-            message_super.save()
-            return Response(status=status.HTTP_201_CREATED)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        owner = get_object_or_404(User, username=request["owner"])
+        print("owner", owner)
+        message_super = MessageSuper(
+            owner=owner,
+            #post=post,
+            message_type="FR",
+            content=request["content"],
+            origin=request["origin"]
+        )
+        print("message_super", message_super)
+        message_super.save()
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class CreateMessageOPENAPIView(APIView):
