@@ -1077,6 +1077,7 @@ class UserMessagesAPIView(ListAPIView):
 class CreateMessageAPIView(APIView):
     # permission_classes = [IsAuthenticated]
     def post(self, request, format=None):
+        request.owner = get_object_or_404(User, username=request.owner)
         serializer = MessageSuperSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(owner=request.user)
@@ -1451,16 +1452,17 @@ def followRequesting(request, remoteNodename, requester_username, proj_username)
         credentials = base64.b64encode(f'{host.username}:{host.password}'.encode('utf-8')).decode('utf-8')
         headers = {
             'Content-Type': 'application/json',
-            'X-CSRFToken': get_token(request),
-            'Authorization': f'Basic {credentials}'
-        }
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+            #'X-CSRFToken': get_token(request),
+            'auth': f'Basic {credentials}'}
+        #authenticate_host(credentials)
         body = {
             "message_type": "FR",
             "owner": proj_username,
             "origin": f"{requester_username} from Server `HTML HEROES`",
             "content": f"{requester_username} from Server `HTML HEROES` wants to follow you remotely, you may accept it by clicking {requestContent_accept}, or reject it by clicking {requestContent_reject}.",
         }
-        response = requests.post(remoteInbox, json=body, headers=headers)
+        response = requests.post(remoteInbox, headers=headers, auth=HerokuBearerAuth("20b7400e-6a24-48fd-8d09-fb134d7e6427"), json=body)
         try:
             if response.status_code == 200:
                 data = response.json()
