@@ -110,6 +110,7 @@ urlpatterns = [
 
     path("remote/posts/<str:remoteNodename>/<str:proj_username>/<str:post_id>/comments/", views.remoteComment, name='REMOTE_PComms'),
     path("remote/posts/<str:remoteNodename>/<str:proj_username>/<str:post_id>/like/", views.remoteLike, name='REMOTE_PLikes'),
+    path('remote/msgs/create/', CreateRemoteMessageAPIView.as_view(), name='API_POSTUserMsg'),
 
     # API docs
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

@@ -248,7 +248,7 @@ def indexView(request):
                             hostname=host.name,
                             username=username,
                             profile=f"remoteprofile/hero/{username}/",
-                            remoteInbox=f"{host.host}api/msgs/create/",
+                            remoteInbox=f"{host.host}remote/msgs/create/",
                             remotePosts=f"{users_endpoint}{user.get('username')}/posts/"
                         )
                         if created:
@@ -1077,13 +1077,29 @@ class UserMessagesAPIView(ListAPIView):
 class CreateMessageAPIView(APIView):
     # permission_classes = [IsAuthenticated]
     def post(self, request, format=None):
-        print(request.data)
-        request["owner"] = get_object_or_404(User, username=request["owner"])
         serializer = MessageSuperSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CreateRemoteMessageAPIView(APIView):
+    def post(self, request, format=None):
+        print(request.data)
+        try:
+            owner = get_object_or_404(User, username=request["owner"])
+            message_super = MessageSuper(
+                owner=owner,
+                #post=post,
+                message_type="FR",
+                content=request["content"],
+                origin=request["origin"]
+            )
+            message_super.save()
+            return Response(status=status.HTTP_201_CREATED)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class CreateMessageOPENAPIView(APIView):
