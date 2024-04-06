@@ -128,6 +128,7 @@ export async function deleteMessageID(messageID) {
 
 export async function acceptFollowRequest(originUsername, msgId) {
     const url = `/api/follow-requests/accept/${originUsername}/`;
+    console.log(url);
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -141,6 +142,8 @@ export async function acceptFollowRequest(originUsername, msgId) {
             console.log('Follow request accepted successfully.');
             // delete the message
             deleteMessageID(msgId);
+            // Send request to local server to notify follow request acceptance
+            await notifyLocalServer(originUsername);
             return true;
         } else {
             console.error('Failed to accept follow request:', response.status, response.statusText);
@@ -179,7 +182,26 @@ export async function rejectFollowRequest(originUsername, msgId) {
     }
 }
 
-
+async function notifyLocalServer(originUsername) {
+    const localUrl = `/accept-remote-follow/${remoteNodename}/${originUsername}/${proj_username}/`;
+    try {
+        const response = await fetch(localUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+            },
+            credentials: 'include', 
+        });
+        if (response.ok) {
+            console.log('Notification sent to local server successfully.');
+        } else {
+            console.error('Failed to send notification to local server:', response.status, response.statusText);
+        }
+    } catch (error) {
+        console.error('Error sending notification to local server:', error);
+    }
+}
 
 function getCsrfToken() {
     const csrfToken = document.cookie

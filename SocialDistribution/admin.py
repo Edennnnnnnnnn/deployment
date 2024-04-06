@@ -115,6 +115,25 @@ class ProjUserAdmin(admin.ModelAdmin):
             form.base_fields['followers'].help_text = "Enter a valid JSON array of usernames."
         return form
 
+class ProjPostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'proj_author', 'date_posted')
+    search_fields = ('title',)
+
+class RemoteLikeAdmin(admin.ModelAdmin):
+    list_display = ('proj_post', 'liker', 'date_liked')
+    list_filter = ('date_liked',)
+    search_fields = ('proj_post__title', 'liker__username')
+
+class RemoteCommentAdmin(admin.ModelAdmin):
+    list_display = ('proj_post', 'commenter', 'date_commented', 'comment_text_short')
+    list_filter = ('date_commented',)
+    search_fields = ('proj_post__title', 'commenter__username', 'comment_text')
+
+    def comment_text_short(self, obj):
+        """A method to shorten the comment text in the list display."""
+        return obj.comment_text[:50] + '...' if len(obj.comment_text) > 50 else obj.comment_text
+    comment_text_short.short_description = 'Comment Text'
+
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Post, PostAdmin)
@@ -129,5 +148,7 @@ admin.site.register(GithubActivity, ActivityAdmin)
 admin.site.register(ServerNode, ServerNodeAdmin)
 admin.site.register(Host, HostAdmin)
 admin.site.register(ProjUser, ProjUserAdmin)
-
+admin.site.register(ProjPost, ProjPostAdmin)
+admin.site.register(RemoteLike)
+admin.site.register(RemoteComment)
 

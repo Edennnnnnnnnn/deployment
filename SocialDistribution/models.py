@@ -294,3 +294,42 @@ class ProjUser(models.Model):
             self.followers = json.dumps(followers)
             self.save()
 
+
+class ProjPost(models.Model):
+    remote_post_id = models.CharField(max_length=255, unique=True, primary_key=True, help_text="remote_post_id")
+    proj_author = models.ForeignKey(ProjUser, on_delete=models.CASCADE, related_name='proj_posts')
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    content_type = models.CharField(max_length=10, choices=[('COMMONMARK', 'CommonMark'), ('PLAIN', 'Plain Text')], default='PLAIN')
+    visibility = models.CharField(max_length=10, choices=[('PUBLIC', 'Public'), ('FRIENDS', 'Friends-Only'), ('PRIVATE', 'Private')], default='PUBLIC')
+    image_data = models.TextField(blank=True, null=True) 
+    date_posted = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def likes_count(self):
+        return self.remote_likes.count()
+
+
+class RemoteLike(models.Model):
+    proj_post = models.ForeignKey(ProjPost, on_delete=models.CASCADE, related_name='remote_likes', default=99999)
+    liker = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='remote_likers', default=0)
+    date_liked = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('proj_post', 'liker')
+        ordering = ['-date_liked']
+
+class RemoteComment(models.Model):
+    proj_post = models.ForeignKey(ProjPost, on_delete=models.CASCADE, related_name='remote_comments', default=99999)
+    commenter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='remote_commenters', default=0)
+    date_commented = models.DateTimeField(auto_now_add=True)
+    comment_text = models.TextField()
+
+    class Meta:
+        ordering = ['-date_commented']
+
+    def __str__(self):
+        return f'Comment by {self.commenter} on {self.proj_post} at {self.date_commented}'

@@ -34,10 +34,14 @@
 
     <script type="module">
         import {
-            createRemotePostBlocks_0_enjoy
-        } from '{% static 'js/friendPosts.js' %}';
+            createRemotePostBlocks_0_enjoy,
+            createRemotePostBlocks_1_200OK,
+            createRemotePostBlocks_2_hero
+        } from '{% static 'js/index.js' %}';
         var remotePosts = {{ posts|safe }};
-        createRemotePostBlocks_0_enjoy(remotePosts["enjoy"])
+        createRemotePostBlocks_0_enjoy(remotePosts["enjoy"]);
+        createRemotePostBlocks_1_200OK(remotePosts["200OK"]);
+        createRemotePostBlocks_2_hero(remotePosts["hero"])
     </script>
 </body>
 

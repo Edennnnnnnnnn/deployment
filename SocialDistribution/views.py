@@ -1,4 +1,5 @@
 # django Pattern:
+import datetime
 from urllib import request
 from django.contrib.auth.hashers import check_password
 from django.http import HttpResponseForbidden
@@ -18,6 +19,7 @@ from django.views.generic import TemplateView, DetailView
 from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.urls import reverse
 from django.core.files.base import ContentFile
 import base64
@@ -33,10 +35,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.renderers import JSONRenderer
 
-# Project Dependencies:
 from .serializers import *
 from .forms import *
 from .permissions import IsAuthorOrReadOnly
@@ -145,6 +147,7 @@ class HerokuBearerAuth(requests.auth.AuthBase):
         return r
 
 
+# @ensure_csrf_cookie
 def indexView(request):
     # CCC
     """ * [GET] Get The Home Page """
@@ -225,6 +228,38 @@ def indexView(request):
                             posts = remove_bool_none_values(posts_response.json().get("items"))
                             # print("\n>> post", posts)
                             remote_posts["200OK"].extend(posts)
+                            for post_data in posts:
+                                print("post data:", post_data)
+                                # 提取远程帖子信息并创建 ProjPost 实例
+                                title = post_data.get('title')
+                                content = post_data.get('content')
+                                content_type = post_data.get('content_type', 'PLAIN').upper()
+                                visibility = post_data.get('visibility', 'PUBLIC').upper()
+                                image_data = post_data.get('image_data', '')
+                                remote_post_id = post_data.get('id')
+                                remote_post_id = remote_post_id.split('/')[-1]
+                                # 创建 ProjPost 实例
+                                proj_post, proj_created = ProjPost.objects.get_or_create(
+                                    remote_post_id=remote_post_id,
+                                    defaults={
+                                        'title': title,
+                                        'content': content,
+                                        'content_type': content_type,
+                                        'visibility': visibility,
+                                        'image_data': image_data,
+                                        'proj_author': proj_user,
+                                        'date_posted': timezone.now(),
+                                        # 其他需要设置的字段...
+                                    }
+                                )
+                                if proj_created:
+                                    print(f"ProjPost '{title}' 创建成功，作者为 {proj_user.username}.ID:", proj_post.remote_post_id)
+                                else:
+                                    print(f"ProjPost '{title}' 已存在.ID:", proj_post.remote_post_id)
+                    for p in remote_posts["200OK"]:
+                        remote_post_id = p.get('id')
+                        remote_post_id = remote_post_id.split('/')[-1]
+                        p['likes_count'] = RemoteLike.objects.filter(proj_post_id=remote_post_id).count()
 
             # Todo - If account channel from team `heros` (other sever) [2]:
             else:
@@ -259,10 +294,44 @@ def indexView(request):
                         print("user.get('username')", user.get('username'))
                         print("posts_endpoint", posts_endpoint)
                         posts_response = requests.get(posts_endpoint, headers=headers, auth=HerokuBearerAuth("20b7400e-6a24-48fd-8d09-fb134d7e6427"), timeout=10)
+                        # if posts_response.status_code == 200:
+                        #     posts = remove_bool_none_values(posts_response.json().get('posts'))
+                        #     # print("\n>> post", posts)
+                        #     remote_posts["hero"].extend(posts)
                         if posts_response.status_code == 200:
                             posts = remove_bool_none_values(posts_response.json().get('posts'))
                             # print("\n>> post", posts)
                             remote_posts["hero"].extend(posts)
+                            posts_data = posts_response.json().get('posts')
+                            for post_data in posts_data:
+                                print("post data:", post_data)
+                                # 提取远程帖子信息并创建 ProjPost 实例
+                                title = post_data.get('title')
+                                content = post_data.get('content')
+                                content_type = post_data.get('content_type', 'PLAIN').upper()
+                                visibility = post_data.get('visibility', 'PUBLIC').upper()
+                                image_data = post_data.get('image_data', '')
+                                remote_post_id = post_data.get('id')
+                                # 创建 ProjPost 实例
+                                proj_post, proj_created = ProjPost.objects.get_or_create(
+                                    remote_post_id=remote_post_id,
+                                    defaults={
+                                        'title': title,
+                                        'content': content,
+                                        'content_type': content_type,
+                                        'visibility': visibility,
+                                        'image_data': image_data,
+                                        'proj_author': proj_user,
+                                        'date_posted': timezone.now(),
+                                        # 其他需要设置的字段...
+                                    }
+                                )
+                                if proj_created:
+                                    print(f"ProjPost '{title}' 创建成功，作者为 {proj_user.username}.ID:", proj_post.remote_post_id)
+                                else:
+                                    print(f"ProjPost '{title}' 已存在.ID:", proj_post.remote_post_id)
+
+
     except Exception as e:
         print("Error:", e)
     template_name = "index.html"
@@ -277,21 +346,67 @@ def FriendPostsView(request, username):
     current_user = get_object_or_404(User, username=username)
     all_proj_users = ProjUser.objects.all()
 
-    remote_posts = {"enjoy": []}
+    remote_posts = {"enjoy": [], "200OK": [], "hero": []}
 
     for proj_user in all_proj_users:
-        # print( proj_user.followers_list, "has_follower", current_user, proj_user.has_follower(current_user))
-        if (proj_user.has_follower(username)):
-            print("**following:", proj_user.username)
+        if proj_user.has_follower(username):
+            print(username, "is following:", proj_user.username)
             posts_endpoint = proj_user.remotePosts
 
-            print("posts_endpoint", posts_endpoint)
-            posts_response = requests.get(posts_endpoint, timeout=10)
-            if posts_response.status_code == 200:
-                posts = remove_bool_none_values(posts_response.json())
-                print("\n>> post", posts)
-                remote_posts["enjoy"].extend(posts)
-    print(remote_posts)
+            try:
+                hosts = Host.objects.filter(allowed=True)
+                print("hosts", hosts)
+
+                for host in hosts:
+                    if host.name == "SELF" and host.allowed:
+                        continue
+
+                    # Todo - If account channel from team `enjoy` [0]:
+                    if host.name == "enjoy":
+                        posts_endpoint = f"{user.get('id')}/posts/"
+                        print("user.get('id')", user.get('id'))
+                        print("posts_endpoint", posts_endpoint)
+                        posts_response = requests.get(posts_endpoint, headers=headers, timeout=10)
+                        if posts_response.status_code == 200:
+                            posts = remove_bool_none_values(posts_response.json())
+                            # print("\n>> post", posts)
+                            remote_posts["enjoy"].extend(posts)
+
+                    # Todo - If account channel from team `200OK` [1]:
+                    elif host.name == "200OK":
+                        auth_headers = {'username': f'{host.username}',
+                                        'password': f'{host.password}'}
+                        
+                        print("posts_endpoint", posts_endpoint)
+                        posts_response = requests.get(posts_endpoint, headers=auth_headers, timeout=10)
+                        if posts_response.status_code == 200:
+                            posts = remove_bool_none_values(posts_response.json().get("items"))
+                            # print("\n>> post", posts)
+                            remote_posts["200OK"].extend(posts)
+
+                    # Todo - If account channel from team `heros` (other sever) [2]:
+                    else:
+                        # Authorization Message Header:
+                        credentials = base64.b64encode(f'{host.username}:{host.password}'.encode('utf-8')).decode('utf-8')
+                        headers = {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+                            'auth': f'Basic {credentials}'}
+                        authenticate_host(credentials)
+    
+                        # GET remote `posts` for each user:
+                        posts_response = requests.get(posts_endpoint, headers=headers, auth=HerokuBearerAuth("20b7400e-6a24-48fd-8d09-fb134d7e6427"), timeout=10)
+                        print("posts_response.status_code", posts_response.status_code)
+                        if posts_response.status_code == 200:
+                            posts = remove_bool_none_values(posts_response.json().get('posts'))
+                            print("\n>> post", posts)
+                            remote_posts["hero"].extend(posts)
+                            posts_data = posts_response.json().get('posts')
+                            
+            except Exception as e:
+                print("Error:", e)
+
+
+    
     return render(request, template_name, {'posts': remote_posts})
 
 
@@ -1085,20 +1200,71 @@ class CreateMessageAPIView(APIView):
 
 
 class CreateRemoteMessageAPIView(APIView):
+    # def post(self, request, format=None):
+    #     owner = get_object_or_404(User, username=request.data.get("owner"))
+    #     print("owner", owner)
+    #     message_super = MessageSuper(
+    #         owner=owner,
+    #         #post=post,
+    #         message_type="FR",
+    #         content=request.data.get("content"),
+    #         origin=request.data.get("origin")
+    #     )
+    #     print("message_super", message_super)
+    #     message_super.save()
+    #     return Response(status=status.HTTP_201_CREATED)
+
     def post(self, request, format=None):
         owner = get_object_or_404(User, username=request.data.get("owner"))
-        print("owner", owner)
-        message_super = MessageSuper(
-            owner=owner,
-            #post=post,
-            message_type="FR",
-            content=request.data.get("content"),
-            origin=request.data.get("origin")
-        )
-        print("message_super", message_super)
-        message_super.save()
-        return Response(status=status.HTTP_201_CREATED)
-
+        message_type = request.data.get("message_type")
+        content = request.data.get("content")
+        origin = request.data.get("origin")
+        
+        # Follow Request
+        if message_type == 'FR':
+            message = MessageSuper(
+                owner=owner, 
+                message_type=message_type, 
+                content=content, 
+                origin=origin
+            )
+            message.save()
+            return Response(status=status.HTTP_201_CREATED)
+        
+        # Like
+        elif message_type == 'LK':
+            message = MessageSuper(
+                owner=owner,
+                message_type=message_type,
+                content=content, 
+                origin=origin
+                # post=post
+            )
+            message.save()
+            return Response(status=status.HTTP_201_CREATED)
+        
+        # Comment
+        elif message_type == 'CM':
+            message = MessageSuper(
+                owner=owner,
+                message_type=message_type,
+                content=content,
+                origin=origin
+                # post=post
+            )
+            message.save()
+            return Response(status=status.HTTP_201_CREATED)
+        
+        # New Post Reminder
+        elif message_type == 'NP':
+            pass
+        
+        # New Sign Up
+        elif message_type == 'SU':
+            pass
+        
+        else:
+            return Response({"error": "Unknown message type"}, status=status.HTTP_400_BAD_REQUEST)
 
 class CreateMessageOPENAPIView(APIView):
     def post(self, request, username, format=None):
@@ -1462,9 +1628,10 @@ def followRequesting(request, remoteNodename, requester_username, proj_username)
     # Todo - Sent FR to spec-user's inbox at server `hero` (other server):
     else:
         print(remoteNodename)
-        print(remoteInbox)
+        print("Get Remote Index: ", remoteInbox)
         users_endpoint = host.host + 'authors/'
         credentials = base64.b64encode(f'{host.username}:{host.password}'.encode('utf-8')).decode('utf-8')
+        auth=HerokuBearerAuth("20b7400e-6a24-48fd-8d09-fb134d7e6427")
         headers = {
             'Content-Type': 'application/json',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
@@ -1477,7 +1644,7 @@ def followRequesting(request, remoteNodename, requester_username, proj_username)
             "origin": f"{requester_username} from Server `HTML HEROES`",
             "content": f"{requester_username} from Server `HTML HEROES` wants to follow you remotely, you may accept it by clicking {requestContent_accept}, or reject it by clicking {requestContent_reject}.",
         }
-        response = requests.post(remoteInbox, headers=headers, auth=HerokuBearerAuth("20b7400e-6a24-48fd-8d09-fb134d7e6427"), json=body)
+        response = requests.post(remoteInbox, headers=headers, auth=auth, json=body)
         try:
             if response.status_code == 200:
                 data = response.json()
@@ -1486,11 +1653,14 @@ def followRequesting(request, remoteNodename, requester_username, proj_username)
             else:
                 try:
                     error = response.json()
-                    print('Failed to create message:', response.status_code, response.reason, error)
+                    print('Failed to create message 1:', response.status_code, response.reason, error)
                     return Response({"error": "Failed to create message.", "details": error},
                                     status=response.status_code)
                 except ValueError:
-                    print('Failed to create message:', response.status_code, response.reason, response.text)
+                    if response.status_code == 201:
+                        print('****  Follow Request Message created successfully.  ****')
+                    else:
+                        print('Failed to create message 2:', response.status_code, response.reason, response.text)
                     return Response({"error": "Failed to create message.", "details": response.text},
                                     status=response.status_code)
         except requests.exceptions.RequestException as e:
@@ -1521,10 +1691,13 @@ def remove_follower(request, remoteNodename, user_username, proj_username):
 def acceptRemoteFollowRequest(request, remoteNodename, user_username, proj_username):
     try:
         proj_User = get_object_or_404(ProjUser, username=proj_username, hostname=remoteNodename)
+
         if proj_User.has_requester(user_username):
             proj_User.remove_requester(user_username)
-        proj_User.add_follower(user_username)
-        return Response({"message": "Follow request is accepted."}, status=status.HTTP_200_OK)
+            proj_User.add_follower(user_username)
+            return Response({"message": "Follow request is accepted."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Follow request not found."}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1541,93 +1714,242 @@ def rejectRemoteFollowRequest(request, remoteNodename, user_username, proj_usern
 
 
 # TTT
-@require_POST
-def remoteComment(request, remoteNodename, proj_username, post_id):
+# @require_POST
+# def remoteComment(request, remote_node_host, proj_username, post_id):
+#     user = request.user
+#     host = get_object_or_404(Host, host__contains=remote_node_host)
+
+#     proj_User = get_object_or_404(ProjUser, username=proj_username, hostname=host.name)
+#     comment_text = request.POST.get('comment_text')
+
+#     remoteInbox = proj_User.remoteInbox
+
+#     if host.name == "enjoy":
+#         pass
+#     elif host.name == "200OK":
+#         print(remoteInbox)
+#         headers = {
+#             'Content-Type': 'application/json',
+#             'X-CSRFToken': get_token(request)
+#         }
+#         print(f"CHECK-01: {request.get_host()}/api/users/{user.username}")
+#         print(f"CHECK-02: {request.get_host()}")
+
+#         # TODO confirm comment_id ?
+#         comment_id = uuid.uuid4().hex
+#         body = {
+#             "type": "comment",
+#             "author": {
+#                 "type": "author",
+#                 "id": request.build_absolute_uri(f"/api/users/{user.uuid}/"),
+#                 "host": request.get_host(),
+#                 "displayName": proj_username,
+#                 "url": request.build_absolute_uri(f"/api/users/{user.uuid}/"),
+#                 "github": "",
+#                 "profilelmage": ""
+#             },
+#             "comment": comment_text,
+#             "contentType": "text/plain",
+#             "published": str(datetime.now()),
+#             "id": f"https://testingheroku-sd-de06f9dd503e.herokuapp.com/api/{user.uuid}/posts/{post_id}/comments/{comment_id}",
+#         }
+
+#         response = requests.post(remoteInbox, json=body, headers=headers)
+#         try:
+#             if response.status_code == 200:
+#                 data = response.json()
+#                 print('Message created successfully:', data)
+#                 return Response({"message": "Comment Reminder created successfully.", "data": data},
+#                                 status=status.HTTP_200_OK)
+#             else:
+#                 try:
+#                     error = response.json()
+#                     print('Failed to create message:', response.status_code, response.reason, error)
+#                     return Response({"error": "Failed to create comment reminder.", "details": error},
+#                                     status=response.status_code)
+#                 except ValueError:
+#                     print('Failed to create message:', response.status_code, response.reason, response.text)
+#                     return Response({"error": "Failed to create comment reminder.", "details": response.text},
+#                                     status=response.status_code)
+#         except requests.exceptions.RequestException as e:
+#             print('Request failed:', e)
+#             return Response({"error": "Request failed.", "details": str(e)},
+#                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#     else:
+#         pass
+
+@api_view(['POST'])
+def remoteComment(request, remote_node_host, proj_username, post_id):
+    print("----------------------------COMMENT-----------------------------")
+    
+    # Retrieve the host
+    host = get_object_or_404(Host, host__contains=remote_node_host)
+    
+    # Retrieve the user making the comment
     user = request.user
-    proj_User = get_object_or_404(ProjUser, username=proj_username, hostname=remoteNodename)
-    comment_text = request.POST.get('comment_text')
+    
+    # Retrieve the project user and post
+    proj_user = get_object_or_404(ProjUser, username=proj_username, hostname=host.name)
+    proj_post = get_object_or_404(ProjPost, proj_author__username=proj_username, proj_author__hostname=host.name, remote_post_id=post_id)
+    
+    remoteInbox = proj_user.remoteInbox
 
-    remoteInbox = proj_User.remoteInbox
+    comment_text = request.data.get('comment_text')
+    if not comment_text:
+        return Response({'error': 'Comment text is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if remoteNodename == "enjoy":
+    if host.name == "enjoy":
         pass
-    elif remoteNodename == "200OK":
-        print(remoteNodename)
-        print(remoteInbox)
-        headers = {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': get_token(request)
-        }
-        print(f"CHECK-01: {request.get_host()}/api/users/{user.username}")
-        print(f"CHECK-02: {request.get_host()}")
 
-        body = {
-            "type": "comment",
-            "author": None,
-            "post": None,
-            "comment": f"Comments reminder from {user.username} at {remoteNodename}",
-            "contentType": "text/plain",
-        }
-        response = requests.post(remoteInbox, json=body, headers=headers)
-        try:
-            if response.status_code == 200:
-                data = response.json()
-                print('Message created successfully:', data)
-                return Response({"message": "Comment Reminder created successfully.", "data": data},
-                                status=status.HTTP_200_OK)
-            else:
-                try:
-                    error = response.json()
-                    print('Failed to create message:', response.status_code, response.reason, error)
-                    return Response({"error": "Failed to create comment reminder.", "details": error},
-                                    status=response.status_code)
-                except ValueError:
-                    print('Failed to create message:', response.status_code, response.reason, response.text)
-                    return Response({"error": "Failed to create comment reminder.", "details": response.text},
-                                    status=response.status_code)
-        except requests.exceptions.RequestException as e:
-            print('Request failed:', e)
-            return Response({"error": "Request failed.", "details": str(e)},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    elif host.name == "200OK":
+        pass
+    
     else:
-        pass
+        # Construct the header and body for the POST request to the remote server
+        credentials = base64.b64encode(f'{host.username}:{host.password}'.encode('utf-8')).decode('utf-8')
+        headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+            'auth': f'Basic {credentials}'
+        }
+        body = {
+            "message_type": "CM",
+            "owner": proj_username,
+            "origin": f"{user.username} from Server `HTML HEROES`",
+            "content": f"{user.username} from Server `HTML HEROES` commented on your post: {comment_text}",
+        }
+        
+        response = requests.post(
+            remoteInbox,
+            headers=headers,
+            auth=HerokuBearerAuth("20b7400e-6a24-48fd-8d09-fb134d7e6427"),
+            json=body
+        )
+        
+        if response.status_code == 201:
+            # Successfully posted comment to remote server, save a local copy
+            RemoteComment.objects.create(
+                proj_post=proj_post,
+                commenter=user,
+                comment_text=comment_text
+            )
+            return Response({"message": "Comment posted successfully."}, status=status.HTTP_201_CREATED)
+        else:
+            # Handle failure scenarios
+            error_message = response.json().get('error', 'Failed to post comment to remote server.')
+            return Response({"error": error_message}, status=response.status_code)
+            
 
+# @require_POST
+# def remoteLike(request, remoteNodename, proj_username, post_id):
+#     user = request.user
+#     proj_User = get_object_or_404(ProjUser, username=proj_username, hostname=remoteNodename)
+#     comment_text = request.POST.get('comment_text')
 
-@require_POST
-def remoteLike(request, remoteNodename, proj_username, post_id):
+#     remoteInbox = proj_User.remoteInbox
+
+#     if remoteNodename == "enjoy":
+#         pass
+#     elif remoteNodename == "200OK":
+#         print(remoteNodename)
+#         print(remoteInbox)
+#         headers = {
+#             'Content-Type': 'application/json',
+#             'X-CSRFToken': get_token(request)
+#         }
+#         print(f"CHECK-01: {request.get_host()}/api/users/{user.username}")
+#         print(f"CHECK-02: {request.get_host()}")
+
+#         body = {
+#             "type": "like",
+#             "object": f"https://{request.get_host()}/api/users/{user.uuid}",
+#             "author": {
+#                 "type": "author",
+#                 "id": f"https://{request.get_host()}/api/users/{user.uuid}",
+#                 "host": request.get_host(),
+#                 "displayName": user.username,
+#                 "url": f"https://{request.get_host()}/api/users/{user.uuid}",
+#             },
+#         }
+#         response = requests.post(remoteInbox, json=body, headers=headers)
+#         try:
+#             if response.status_code == 200:
+#                 data = response.json()
+#                 print('Message created successfully:', data)
+#                 return Response({"message": "Like Reminder created successfully.", "data": data},
+#                                 status=status.HTTP_200_OK)
+#             else:
+#                 try:
+#                     error = response.json()
+#                     print('Failed to create message:', response.status_code, response.reason, error)
+#                     return Response({"error": "Failed to create like reminder.", "details": error},
+#                                     status=response.status_code)
+#                 except ValueError:
+#                     print('Failed to create message:', response.status_code, response.reason, response.text)
+#                     return Response({"error": "Failed to create like reminder.", "details": response.text},
+#                                     status=response.status_code)
+#         except requests.exceptions.RequestException as e:
+#             print('Request failed:', e)
+#             return Response({"error": "Request failed.", "details": str(e)},
+#                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#     else:
+#         pass
+
+@api_view(['POST'])
+def remoteLike(request, remote_node_host, proj_username, post_id):
+    print("--------------------------LIKE-----------------------------")
+    print(post_id)
+
+    host = get_object_or_404(Host, host__contains=remote_node_host)
+    print('host_username:', host.username, "host_password:", host.password)
+
+    # Get the user who is liking the post
     user = request.user
-    proj_User = get_object_or_404(ProjUser, username=proj_username, hostname=remoteNodename)
-    comment_text = request.POST.get('comment_text')
+    print('user', user)
 
-    remoteInbox = proj_User.remoteInbox
+    # Get the project user who owns the post
+    proj_user = get_object_or_404(ProjUser, username=proj_username, hostname=host.name)
+    print('projuser', proj_user)
 
-    if remoteNodename == "enjoy":
+    proj_user = get_object_or_404(ProjUser, username=proj_username, hostname=host.name)
+    print('projuser',proj_user)
+    proj_post = get_object_or_404(ProjPost, proj_author__username=proj_username, proj_author__hostname=host.name, remote_post_id=post_id)
+
+    # Get the inbox URL for the project user
+    remoteInbox = proj_user.remoteInbox
+
+    if RemoteLike.objects.filter(liker=user, proj_post=proj_post).exists():
+        return Response({'error': 'You have already liked this post.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if host.name == "enjoy":
         pass
-    elif remoteNodename == "200OK":
-        print(remoteNodename)
-        print(remoteInbox)
+
+    elif host.name == "200OK":
         headers = {
             'Content-Type': 'application/json',
             'X-CSRFToken': get_token(request)
         }
         print(f"CHECK-01: {request.get_host()}/api/users/{user.username}")
         print(f"CHECK-02: {request.get_host()}")
-
         body = {
             "type": "like",
-            "object": f"https://{request.get_host()}/api/users/{user.uuid}",
             "author": {
                 "type": "author",
-                "id": f"https://{request.get_host()}/api/users/{user.uuid}",
+                "id": request.build_absolute_uri(f"/api/users/{user.uuid}/"),
                 "host": request.get_host(),
-                "displayName": user.username,
-                "url": f"https://{request.get_host()}/api/users/{user.uuid}",
+                "displayName": proj_username,
+                "url": request.build_absolute_uri(f"/api/users/{user.uuid}/"),
+                "github": "",
+                "profilelmage": ""
             },
+            "object": request.build_absolute_uri(f"/api/authors/{user.uuid}/posts/{post_id}"),
+            "summary": f"{proj_username} liked your post"
         }
         response = requests.post(remoteInbox, json=body, headers=headers)
         try:
             if response.status_code == 200:
                 data = response.json()
+                RemoteLike.objects.get_or_create(proj_post=proj_post, liker=user)
                 print('Message created successfully:', data)
                 return Response({"message": "Like Reminder created successfully.", "data": data},
                                 status=status.HTTP_200_OK)
@@ -1645,9 +1967,79 @@ def remoteLike(request, remoteNodename, proj_username, post_id):
             print('Request failed:', e)
             return Response({"error": "Request failed.", "details": str(e)},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    else:
-        pass
 
+    else:
+        users_endpoint = host.host + 'authors/'
+        # Encode the credentials for Basic Auth
+        credentials = base64.b64encode(f'{host.username}:{host.password}'.encode('utf-8')).decode('utf-8')
+        headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+            'auth': f'Basic {credentials}'
+        }
+
+        # Construct the body of the like notification
+        body = {
+            "message_type": "LK",
+            "owner": proj_username,
+            "origin": f"{user.username} from Server `HTML HEROES`",
+            "content": f"{user.username} from Server `HTML HEROES` liked your post.",
+            # "post": post
+        }
+
+        # Send the POST request to the remote inbox
+        response = requests.post(
+            remoteInbox,
+            headers=headers,
+            auth=HerokuBearerAuth("20b7400e-6a24-48fd-8d09-fb134d7e6427"),
+            json=body
+        )
+        try:
+            if response.status_code == 201:
+                RemoteLike.objects.create(liker=user, proj_post=proj_post)
+
+                # proj_post.refresh_from_db()
+                likes_count = proj_post.remote_likes.count()
+                response_data = {
+                    'likes_count': likes_count,
+                }
+                return Response(response_data, status=status.HTTP_201_CREATED)
+
+                if response.content:
+                    data = response.json()
+                    print('Like notification sent successfully:', data)
+                    return Response({"message": "Like notification sent successfully.", "data": data},
+                                    status=status.HTTP_200_OK)
+                else:
+                    print('No content in response')
+                    return Response({"message": "Like notification sent but no content in response"},
+                                    status=status.HTTP_204_NO_CONTENT)
+            else:
+                if response.content:
+                    error = response.json() if 'json' in response.headers.get('Content-Type', '') else response.text
+                else:
+                    error = 'No content in response'
+                print('Failed to send like notification:', response.status_code, response.reason, error)
+                return Response({"error": "Failed to send like notification.", "details": error},
+                                status=response.status_code)
+        except requests.exceptions.RequestException as e:
+            print('Request failed:', e)
+            return Response({"error": "Request failed.", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def check_remote_like_status(request, remoteNodeName, projUsername, postId):
+    """
+    Check if the user liked the remote post and return the like count.
+    """
+    user = request.user
+    try:
+        proj_post = ProjPost.objects.get(proj_author__username=projUsername, proj_author__hostname=remoteNodeName, remote_post_id=postId)
+        has_liked = RemoteLike.objects.filter(proj_post=proj_post, liker=user).exists()
+        likes_count = RemoteLike.objects.filter(proj_post=proj_post).count()
+        return JsonResponse({'has_liked': has_liked, 'likes_count': likes_count})
+    except ProjPost.DoesNotExist:
+        return JsonResponse({'error': 'ProjPost not found'}, status=404)
 
 """ HELPER FUNC """
 

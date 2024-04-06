@@ -56,7 +56,24 @@ function createBlock(msg, type, isNewMsg = true) {
 
     let img_avatar = document.createElement("img");
     img_avatar.classList.add("user-avatar");
-    img_avatar.src = staticUrl + 'images/' + (msg.origin_avatar || 'default_avatar.png');
+    var ownerUsername = msg.owner_username;
+    fetch(`/api/user/${ownerUsername}/`)
+        .then(response => {
+            if (!response.ok) {
+                img_avatar.src = staticUrl + 'images/default_avatar.png';
+                throw new Error('Failed to fetch user data');
+            }
+            return response.json();
+        })
+        .then(user => {
+            var avatar = user.avatar; 
+            console.log(avatar);
+            img_avatar.src = avatar || (staticUrl + 'images/default_avatar.png');
+        })
+        .catch(error => {
+            img_avatar.src = staticUrl + 'images/default_avatar.png';
+         });
+    
 
     let span_sender = document.createElement("span");
     span_sender.classList.add("sender");
@@ -95,12 +112,25 @@ function createBlock(msg, type, isNewMsg = true) {
     p_content.classList.add("message-text");
     div_messageBody.appendChild(p_content);
 
+    let a_postLink = document.createElement("button");
+    a_postLink.classList.add("view-post-link"); 
+    a_postLink.textContent = "View Post"; 
+    a_postLink.addEventListener("click", () => {
+        window.location.href = `/posts/${msg.post_id}/`;
+    });
+    // Place the View Post link outside the message body to always show it
+    div_messageBody.appendChild(a_postLink);
+
     if (type === 'FR') {
+        a_postLink.style.display = "none"
+
         // add accept and reject Button
         const acceptButton = document.createElement("button");
+        acceptButton.classList.add("inbox-accept-btn");
         acceptButton.textContent = "Accept";
+        
         // add click listener
-        acceptButton.addEventListener('click', function() {
+        acceptButton.addEventListener('click', function(event) {
             event.stopPropagation();
             // accepct
             acceptFollowRequest(msg.origin, msg.id);
@@ -108,10 +138,13 @@ function createBlock(msg, type, isNewMsg = true) {
             window.location.reload();
         });
     
-        const rejectButton = document.createElement("button");
-        rejectButton.textContent = "Reject";
         // reject
-        rejectButton.addEventListener('click', function() {
+        const rejectButton = document.createElement("button");
+        rejectButton.classList.add("inbox-reject-btn");
+        rejectButton.textContent = "Reject";
+        
+        
+        rejectButton.addEventListener('click', function(event) {
             event.stopPropagation();    
             rejectFollowRequest(msg.origin, msg.id);
             alert("Request Rejected!!");
@@ -123,19 +156,14 @@ function createBlock(msg, type, isNewMsg = true) {
         div_messageBody.appendChild(rejectButton);
     }
 
-    let a_postLink = document.createElement("a");
-    a_postLink.href = `/posts/${msg.post_id}/`;
-    a_postLink.classList.add("view-post-link");
-    a_postLink.textContent = "View Post";
-    // Place the View Post link outside the message body to always show it
-    div_messageBody.appendChild(a_postLink);
-
+    // Inbox Delete btn
     let button_delete = document.createElement("button");
     button_delete.classList.add("inbox-delete-btn");
     button_delete.textContent = "Delete";
     button_delete.setAttribute('ID', msg.id);
     div_messageBody.appendChild(button_delete);
 
+    // Inbox Star btn
     let button_star = document.createElement("button");
     button_star.classList.add("inbox-star-btn");
     button_star.textContent = "Star";

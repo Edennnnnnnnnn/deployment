@@ -3,11 +3,6 @@
 import {formatDate} from "./common.js";
 
 document.addEventListener('DOMContentLoaded', () => {
-    const commentModal = document.getElementById('comment-modal');
-    const commentInput = document.getElementById('comment-text');
-    const submitCommentButton = document.getElementById('submit-comment');
-    const cancelCommentButton = document.getElementById('cancel-comment');
-
     fetch('/api/pps/')
         .then(response => response.json())
         .then(posts => {
@@ -44,6 +39,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
                 // <img src="${post.image_data}>
+
+                const commentFormDiv = document.createElement('div');
+                const commentFormHTML = `
+                    <div class="comment-form" style="display:none;">
+                        <textarea class="comment-text"></textarea>
+                        <button class="submit-comment">Confirm</button>
+                        <button class="cancel-comment">Cancel</button>
+                    </div>
+                `;
+
+                const interactionDiv = document.createElement('div');
                 const interactionHTML = `
                     <div class="interact-container">
                         <!-- <button id="share-${post.id}" type="button" data-post-id="${post.id}">
@@ -66,30 +72,71 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>  
                 `;
 
-                // Append userInfoHTML, contentHTML, and interactionHTML to postLink instead of postElement
-                // postLink.innerHTML = userInfoHTML + contentHTML + interactionHTML;
-                postLink.innerHTML = userInfoHTML + contentHTML + interactionHTML;
+                // Append userInfoHTML and contentHTMLto postLink instead of postElement
+                postLink.innerHTML = userInfoHTML + contentHTML;
                 postElement.appendChild(postLink);
-                // postElement.innerHTML = postElement.innerHTML  + commentHTML;
+                commentFormDiv.innerHTML = commentFormHTML;
+                postElement.appendChild(commentFormDiv);
+                interactionDiv.innerHTML = interactionHTML;
+                postElement.appendChild(interactionDiv);
+
                 postContainer.appendChild(postElement);
 
                 // comment listener
                 const commentButton = postElement.querySelector(`button[data-post-id="${post.id}"]`);
                 if (commentButton) {
                     commentButton.addEventListener('click', function() {
-                        event.preventDefault();
-
-                        // display the input box
-                        commentModal.style.display = 'block';
-                        submitCommentButton.setAttribute('data-post-id', post.id);
+                        const commentForm = postElement.querySelector('.comment-form');
+                        commentForm.style.display = 'block';
                     });
                 }
+
+                const cancelCommentButton = postElement.querySelector('.cancel-comment');
+                cancelCommentButton.addEventListener('click', () => {
+                    const commentForm = postElement.querySelector('.comment-form');
+                    commentForm.style.display = 'none';
+                    commentFormDiv.querySelector('.comment-text').value = '';
+                });
+
+                const submitCommentButton = postElement.querySelector('.submit-comment');
+                submitCommentButton.addEventListener('click', () => {
+                    const postId = post.id;
+                    const commentText = commentFormDiv.querySelector('.comment-text').value.trim();
+                    if (commentText === '') {
+                        alert('Please enter a comment.');
+                        return;
+                    }
+
+                    fetch(`/api/posts/${postId}/comments/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ comment_text: commentText })
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(() => {
+                            const commentForm = postElement.querySelector('.comment-form');
+                            commentForm.style.display = 'none';
+                            commentFormDiv.querySelector('.comment-text').value = '';
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error posting comment.');
+                        });
+                });
 
                 // like listener
                 const likeButton = postElement.querySelector(`button[id="like-${post.id}"]`);
                 if (likeButton) {
-                    likeButton.addEventListener('click', function(event) {
-                        event.preventDefault();
+                    likeButton.addEventListener('click', () => {
+                        // event.preventDefault();
                         toggleLike(post.id); // like function
                     });
                 }
@@ -98,103 +145,115 @@ document.addEventListener('DOMContentLoaded', () => {
             sortPostsByDate();
         })
         .catch(error => console.error('Error:', error));
-
-    cancelCommentButton.addEventListener('click', () => {
-
-        commentInput.value = ''; // clear the input box
-    });
-
-    submitCommentButton.addEventListener('click', () => {
-        const postId = submitCommentButton.getAttribute('data-post-id');
-        const commentText = commentInput.value.trim();
-        if (commentText === '') {
-            alert('Please enter a comment.');
-            return;
-        }
-
-        fetch(`/api/posts/${postId}/comments/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ comment_text: commentText })
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(() => {
-                document.getElementById('comment-modal').style.display = 'none';
-                document.getElementById('comment-text').value = ''; // clear the input box
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error posting comment.');
-            });
-        commentModal.style.display = 'none';
-        commentInput.value = '';
-    });
-
-    function toggleLike(postId) {
-        console.log('Like button clicked for post:', postId);
-        fetch(`/api/posts/${postId}/likes/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'), // Get CSRF token
-                'Content-Type': 'application/json'
-            },
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                checkLikeStatusAndUpdateIcon(postId);
-                fetchLikes(postId);
-            })
-            .catch(error => {
-                console.error('There was a problem with the fetch operation:', error);
-            });
-    }
-
-    function updateLikeIcon(postId, isLiked) {
-        console.log("hongxin")
-        const likeButton = document.getElementById(`like-${postId}`);
-        const likeIcon = likeButton.querySelector('ion-icon');
-
-        if (isLiked) {
-            likeIcon.setAttribute('name', 'heart');
-            likeIcon.style.color = 'red'; // set to red
-            console.log("liked")
-        }
-        else {
-            likeIcon.setAttribute('name', 'heart-outline');
-            likeIcon.style.color = '';
-            console.log("didn't like")
-        }
-    }
-
-    function checkLikeStatusAndUpdateIcon(postId) {
-        fetch(`/api/posts/${postId}/check-like/`, {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'), // Get CSRF token
-                'Content-Type': 'application/json'
-            },
-        })
-            .then(response => response.json())
-            .then(data => {
-                updateLikeIcon(postId, data.has_liked); // Update icon based on like status
-            })
-            .catch(error => console.error('Error checking like status:', error));
-    }
-
 })
+
+function toggleLike(postId) {
+    console.log('Like button clicked for post:', postId);
+    fetch(`/api/posts/${postId}/likes/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'), // Get CSRF token
+            'Content-Type': 'application/json'
+        },
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            checkLikeStatusAndUpdateIcon(postId);
+            fetchLikes(postId);
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+}
+
+function toggleLikeRemote(remoteNodeName, projUsername, postId) {
+    // console.log('Like button clicked for post:', postId);
+    // fetch(`/api/posts/${postId}/likes/`, {
+        const remoteLikeURL = `/remote/posts/${encodeURIComponent(remoteNodeName)}/${encodeURIComponent(projUsername)}/${postId}/like/`;
+        fetch(remoteLikeURL, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'), // Get CSRF token
+            'Content-Type': 'application/json'
+        },
+    })
+        .then(response => {
+            if (response.status === 201) {
+            checkRemoteLikeStatusAndUpdateIcon(remoteNodeName, projUsername, postId);
+            } else if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // fetchLikes(postId);
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+}
+
+function checkLikeStatusAndUpdateIcon(postId) {
+    fetch(`/api/posts/${postId}/check-like/`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'), // Get CSRF token
+            'Content-Type': 'application/json'
+        },
+    })
+        .then(response => response.json())
+        .then(data => {
+            updateLikeIcon(postId, data.has_liked); // Update icon based on like status
+        })
+        .catch(error => console.error('Error checking like status:', error));
+}
+
+function checkRemoteLikeStatusAndUpdateIcon(remoteNodeName, projUsername, postId) {
+    const remoteCheckLikeURL = `/remote/posts/${encodeURIComponent(remoteNodeName)}/${encodeURIComponent(projUsername)}/${postId}/check-like/`;
+    fetch(remoteCheckLikeURL, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'), // Get CSRF token
+            'Content-Type': 'application/json'
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Additionally, update the likes count display
+        updateLikesDisplay(data.likes_count, postId);
+        // Update like icon based on the `has_liked` status
+        updateLikeIcon(postId, data.has_liked);
+    })
+    .catch(error => console.error('Error checking remote like status:', error));
+}
+
+
+function updateLikeIcon(postId, isLiked) {
+    console.log("hongxin")
+    const likeButton = document.getElementById(`like-${postId}`);
+    const likeIcon = likeButton.querySelector('ion-icon');
+
+    if (isLiked) {
+        likeIcon.setAttribute('name', 'heart');
+        likeIcon.style.color = 'red'; // set to red
+        console.log("liked")
+    }
+    else {
+        likeIcon.setAttribute('name', 'heart-outline');
+        likeIcon.style.color = '';
+        console.log("didn't like")
+    }
+}
 
 function fetchLikes(postId) {
     fetch(`/api/posts/${postId}/likes/`)
@@ -214,16 +273,19 @@ function fetchLikes(postId) {
 
 function updateLikesDisplay(likesCount, postId) {
     const likeButton = document.getElementById(`like-${postId}`);
-    const likeCountElement = likeButton.querySelector('.like-count');
-    if (likeCountElement) {
-        // Update the display of like amounts
-        likeButton.innerHTML = `<ion-icon size="small" name="heart-outline" style="margin-right: 8px;"></ion-icon>` +
-            (likesCount > 0 ? `<span class="like-count">${likesCount}</span>` : '');
+    // const likeCountElement = likeButton.querySelector('.like-count');
+    if (likeButton) {
+        if (likesCount > 0) {
+            likeButton.innerHTML = `<ion-icon size="small" name="heart" style="margin-right: 8px;"></ion-icon><span class="like-count">${likesCount}</span>`;
+        } else {
+            likeButton.innerHTML = `<ion-icon size="small" name="heart-outline" style="margin-right: 8px;"></ion-icon>Like`;
+        }
     }
     else {
         console.error('Like count span not found inside button for post:', postId);
     }
 }
+
 
 // TODO: fitting design
 export function createRemotePostBlocks_0_enjoy(remotePosts) {
@@ -322,6 +384,7 @@ export function createRemotePostBlocks_1_200OK(remotePosts) {
             </div>
         `;
 
+        let postId = post.id.split('/').slice(-1)[0]
         const interactionHTML = `
             <div class="interact-container">
                 <button id="comment-${post.id}" type="button" data-post-id="${post.id}">
@@ -333,9 +396,8 @@ export function createRemotePostBlocks_1_200OK(remotePosts) {
                 </button>
                 <button id="like-${post.id}" type="button" data-post-id="${post.id}"> 
                     <ion-icon size="small" name="heart-outline" style="margin-right: 8px;">
-                    </ion-icon>
-                            ${post.likes_count > 0 ? '' : 'Like'}
-                        <span class="like-count">${post.likes_count > 0 ? post.likes_count : ''}</span>
+                    </ion-icon><div id="${postId}-like-style">${post.likes_count > 0 ? '' : 'Like'}</div>
+                        <span class="like-count" id="${postId}-like-count">${post.likes_count > 0 ? post.likes_count : ''}</span>
                 </button>
                 
             </div>
@@ -373,7 +435,10 @@ export function createRemotePostBlocks_1_200OK(remotePosts) {
                         return;
                     }
 
-                    fetch(`/api/posts/200OK/${post.author.displayName}/${post.id}/comments/`, {
+                    let postId = post.id.split('/').slice(-1)[0]
+                    let host = post.author.host.split('/')[2]
+
+                    fetch(`/remote/posts/${host}/${post.author.displayName}/${postId}/comments/`, {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': getCookie('csrftoken'),
@@ -390,6 +455,7 @@ export function createRemotePostBlocks_1_200OK(remotePosts) {
                         .then(() => {
                             document.getElementById('comment-modal').style.display = 'none';
                             document.getElementById('comment-text').value = ''; // clear the input box
+                            alert('Success posting comment.');
                         })
                         .catch(error => {
                             console.error('Error:', error);
@@ -404,6 +470,40 @@ export function createRemotePostBlocks_1_200OK(remotePosts) {
             console.log("cancel button clicked");
             commentInput.value = ''; // clear the input box
         });
+
+        const likeButton = document.getElementById(`like-${post.id}`)
+        likeButton.addEventListener('click', () => {
+            console.log(post)
+
+            let postId = post.id.split('/').slice(-1)[0]
+            let host = post.author.host.split('/')[2]
+            console.log(postId)
+            fetch(`/remote/posts/${host}/${post.author.displayName}/${postId}/like/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+            })
+                .then(response => {
+                    return response.json();
+                })
+                .then((data) => {
+                    if (data.message){
+                        alert('Success posting Like.');
+                        let like = document.getElementById(`${postId}-like-count`)
+                        like.innerText = like.innerText + 1
+                        let likeBtn = document.getElementById(`${postId}-like-style`)
+                        likeBtn.innerText = ''
+                    }else{
+                        alert(`${data.error || data.detail}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error posting Like.');
+                });
+        })
     });
     sortPostsByDate();
 }
@@ -423,6 +523,8 @@ export function createRemotePostBlocks_2_hero(remotePosts) {
         const datePosted = new Date(post.date_posted);
         const formattedDate = formatDate(datePosted);
 
+        checkRemoteLikeStatusAndUpdateIcon('hero', post.username, post.id)
+
         const userInfoHTML = `
             <div class="user-info">
                 <img src="${post.avatar}" alt="profile avatar" class="user-avatar">
@@ -438,14 +540,111 @@ export function createRemotePostBlocks_2_hero(remotePosts) {
         const contentHTML = `
             <div class="content">
                 <div class="title">${post.title}</div>
-                ${isImageData(post.content) ? createImagesHTML(post.content) : `<p class="remote-post-content">${post.content}</p>`}
+                <p class="post-content">${post.content}</p>
+                ${createImagesHTML(post.image_data)}
+                
             </div>
+        `;
+
+        const commentFormDiv = document.createElement('div');
+        const commentFormHTML = `
+            <div class="comment-form" style="display:none;">
+                <textarea class="comment-text"></textarea>
+                <button class="submit-comment">Confirm</button>
+                <button class="cancel-comment">Cancel</button>
+            </div>
+        `;
+
+        const interactionDiv = document.createElement('div');
+        const interactionHTML = `
+            <div class="interact-container">
+                <button id="comment-${post.id}" type="button" data-post-id="${post.id}">
+                    <ion-icon size="small" name="chatbox-ellipses-outline" style="margin-right: 8px;">
+                    </ion-icon>
+                        ${post.comment_count > 0 ? '' : 'Comment'} 
+                        <span class="comment-count">${post.comment_count > 0 ? post.comment_count : ''}
+                    </span>
+                </button>
+                <button id="like-${post.id}" type="button" data-post-id="${post.id}"> 
+                    <ion-icon size="small" name="heart-outline" style="margin-right: 8px;">
+                    </ion-icon>
+                            ${post.likes_count > 0 ? '' : 'Like'}
+                        <span class="like-count">${post.likes_count > 0 ? post.likes_count : ''}</span>
+                </button>
+            </div>  
         `;
 
         postLink.innerHTML = userInfoHTML + contentHTML;
         postElement.appendChild(postLink);
+        commentFormDiv.innerHTML = commentFormHTML;
+        postElement.appendChild(commentFormDiv);
+        interactionDiv.innerHTML = interactionHTML;
+        postElement.appendChild(interactionDiv);
         postContainer.appendChild(postElement);
+        
+        // comment listener
+        const commentButton = postElement.querySelector(`button[data-post-id="${post.id}"]`);
+        if (commentButton) {
+            commentButton.addEventListener('click', function() {
+                const commentForm = postElement.querySelector('.comment-form');
+                commentForm.style.display = 'block';
+            });
+        }
+
+        const cancelCommentButton = postElement.querySelector('.cancel-comment');
+        cancelCommentButton.addEventListener('click', () => {
+            const commentForm = postElement.querySelector('.comment-form');
+            commentForm.style.display = 'none';
+            commentFormDiv.querySelector('.comment-text').value = '';
+        });
+
+        const submitCommentButton = postElement.querySelector('.submit-comment');
+        submitCommentButton.addEventListener('click', () => {
+            const postId = post.id;
+            const postUsername = post.username;
+            const serverName = 'hero';
+            const commentText = commentFormDiv.querySelector('.comment-text').value.trim();
+            if (commentText === '') {
+                alert('Please enter a comment.');
+                return;
+            }
+
+            const remoteCommentURL = `/remote/posts/${serverName}/${postUsername}/${postId}/comments/`;
+            fetch(remoteCommentURL, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ comment_text: commentText })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    const commentForm = postElement.querySelector('.comment-form');
+                    commentForm.style.display = 'none';
+                    commentFormDiv.querySelector('.comment-text').value = '';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error posting comment.');
+                });
+        });
+
+        // like listener
+        const likeButton = postElement.querySelector(`button[id="like-${post.id}"]`);
+        if (likeButton) {
+            likeButton.addEventListener('click', () => {
+                // toggleLike(post.id); // like function
+                toggleLikeRemote('hero', post.username, post.id)
+            });
+        }
     });
+    sortPostsByDate();
 }
 
 
