@@ -1,12 +1,4 @@
 <div class="post-container" id ="post-container">
-    {% if user.is_authenticated %}
-    <div class="search-bar">
-        <ion-icon name="search-outline" style="font-size: 26px; margin: 5px; color: rgb(97, 97, 97);"></ion-icon>
-        <form id="search-form" action="/search" method="get">
-            <input type="hidden" name="user1_id" value="{{ request.user.username }}">
-            <input type="text" name="user2_id" placeholder="Search by username">
-        </form>
-    </div>
-    {% endif %}
+    
     <!-- Posts will be dynamically loaded here via JavaScript -->
 </div>

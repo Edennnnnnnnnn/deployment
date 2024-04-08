@@ -206,10 +206,11 @@ class RemoteCommentSerializer(serializers.ModelSerializer):
     commenter_username = serializers.CharField(source='commenter.username', read_only=True)
     commenter_avatar_url = serializers.SerializerMethodField()
     can_delete = serializers.SerializerMethodField()
+    uuid = serializers.UUIDField(read_only=True)
 
     class Meta:
         model = RemoteComment
-        fields = ['id', 'proj_post', 'commenter', 'commenter_username', 'commenter_avatar_url', 'date_commented',
+        fields = ['uuid', 'proj_post', 'commenter', 'commenter_username', 'commenter_avatar_url', 'date_commented',
                   'comment_text', 'can_delete']
 
     def get_commenter_avatar_url(self, obj):

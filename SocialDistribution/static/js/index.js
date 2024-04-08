@@ -171,8 +171,13 @@ function toggleLike(postId) {
         });
 }
 
-function toggleLikeRemote(remoteNodeName, projUsername, postId) {
-    // console.log('Like button clicked for post:', postId);
+function toggleLikeRemote(remoteNodeName, projUsername, post_id) {
+    let postId;
+    if (remoteNodeName === '200OK') {
+        postId = post_id.split('/').slice(-1)[0];
+    } else {
+        postId = post_id;
+    }
     // fetch(`/api/posts/${postId}/likes/`, {
         const remoteLikeURL = `/remote/posts/${encodeURIComponent(remoteNodeName)}/${encodeURIComponent(projUsername)}/${postId}/like/`;
         fetch(remoteLikeURL, {
@@ -183,8 +188,8 @@ function toggleLikeRemote(remoteNodeName, projUsername, postId) {
         },
     })
         .then(response => {
-            if (response.status === 201) {
-            checkRemoteLikeStatusAndUpdateIcon(remoteNodeName, projUsername, postId);
+            if (response.status === 201 || response.status === 200) {
+            checkRemoteLikeStatusAndUpdateIcon(remoteNodeName, projUsername, post_id);
             } else if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -213,7 +218,13 @@ function checkLikeStatusAndUpdateIcon(postId) {
         .catch(error => console.error('Error checking like status:', error));
 }
 
-function checkRemoteLikeStatusAndUpdateIcon(remoteNodeName, projUsername, postId) {
+function checkRemoteLikeStatusAndUpdateIcon(remoteNodeName, projUsername, post_id) {
+    let postId;
+    if (remoteNodeName === '200OK') {
+        postId = post_id.split('/').slice(-1)[0];
+    } else {
+        postId = post_id;
+    }
     const remoteCheckLikeURL = `/remote/posts/${encodeURIComponent(remoteNodeName)}/${encodeURIComponent(projUsername)}/${postId}/check-like/`;
     fetch(remoteCheckLikeURL, {
         method: 'GET',
@@ -230,9 +241,9 @@ function checkRemoteLikeStatusAndUpdateIcon(remoteNodeName, projUsername, postId
     })
     .then(data => {
         // Additionally, update the likes count display
-        updateLikesDisplay(data.likes_count, postId);
+        updateLikesDisplay(data.likes_count, post_id);
         // Update like icon based on the `has_liked` status
-        updateLikeIcon(postId, data.has_liked);
+        updateLikeIcon(post_id, data.has_liked);
     })
     .catch(error => console.error('Error checking remote like status:', error));
 }
@@ -365,6 +376,9 @@ export function createRemotePostBlocks_1_200OK(remotePosts) {
         const datePosted = new Date(post.published);
         const formattedDate = formatDate(datePosted);
 
+        console.log(post.id, post.id.split('/').slice(-1)[0], "post")
+        checkRemoteLikeStatusAndUpdateIcon('200OK', post.author.displayName, post.id)
+
         const userInfoHTML = `
             <div class="user-info">
                 <img src="${post.avatar}" alt="profile avatar" class="user-avatar">
@@ -384,7 +398,17 @@ export function createRemotePostBlocks_1_200OK(remotePosts) {
             </div>
         `;
 
+        const commentFormDiv = document.createElement('div');
+        const commentFormHTML = `
+            <div class="comment-form" style="display:none;">
+                <textarea class="comment-text"></textarea>
+                <button class="submit-comment">Confirm</button>
+                <button class="cancel-comment">Cancel</button>
+            </div>
+        `;
+
         let postId = post.id.split('/').slice(-1)[0]
+        const interactionDiv = document.createElement('div');
         const interactionHTML = `
             <div class="interact-container">
                 <button id="comment-${post.id}" type="button" data-post-id="${post.id}">
@@ -396,113 +420,173 @@ export function createRemotePostBlocks_1_200OK(remotePosts) {
                 </button>
                 <button id="like-${post.id}" type="button" data-post-id="${post.id}"> 
                     <ion-icon size="small" name="heart-outline" style="margin-right: 8px;">
-                    </ion-icon><div id="${postId}-like-style">${post.likes_count > 0 ? '' : 'Like'}</div>
+                    </ion-icon>
+                            ${post.likes_count > 0 ? '' : 'Like'}
                         <span class="like-count" id="${postId}-like-count">${post.likes_count > 0 ? post.likes_count : ''}</span>
-                </button>
-                
-            </div>
-           
-        `;
-        const commentHTML = `
-            <div id="comment-modal-${post.id}" style="display:none;">
-                <textarea id="comment-text-${post.id}"></textarea>
-                <button id="submit-comment-${post.id}">Confirm</button>
-                <button id="cancel-comment-${post.id}">Cancel</button>
-            </div>
-        `;
+                </button>           
+            </div>         
+        `;  
+
+        // const commentHTML = `
+        //     <div id="comment-modal-${post.id}" style="display:none;">
+        //         <textarea id="comment-text-${post.id}"></textarea>
+        //         <button id="submit-comment-${post.id}">Confirm</button>
+        //         <button id="cancel-comment-${post.id}">Cancel</button>
+        //     </div>
+        // `;
 
         postLink.innerHTML = userInfoHTML + contentHTML;
         postElement.appendChild(postLink);
-        postElement.innerHTML = postElement.innerHTML + interactionHTML + commentHTML;
+        commentFormDiv.innerHTML = commentFormHTML;
+        postElement.appendChild(commentFormDiv);
+        interactionDiv.innerHTML = interactionHTML;
+        postElement.appendChild(interactionDiv);
         postContainer.appendChild(postElement);
 
+        // const commentButton = postElement.querySelector(`button[data-post-id="${post.id}"]`);
+        // const commentModal = document.getElementById(`comment-modal-${post.id}`);
+        // const submitCommentButton = document.getElementById(`submit-comment-${post.id}`);
+        // const cancelCommentButton = document.getElementById(`cancel-comment-${post.id}`);
+        // const commentInput = document.getElementById(`comment-text-${post.id}`);
+        // if (commentButton) {
+        //     commentButton.addEventListener('click', function() {
+
+        //         // display the input box
+        //         commentModal.style.display = commentModal.style.display === 'block' ? 'none' : 'block';
+
+        //         // submitCommentButton.setAttribute('data-post-id', post.id);
+        //         submitCommentButton.addEventListener('click', () => {
+        //             const commentText = commentInput.value.trim();
+        //             if (commentText === '') {
+        //                 alert('Please enter a comment.');
+        //                 return;
+        //             }
+
+        //             let postId = post.id.split('/').slice(-1)[0]
+        //             let host = post.author.host.split('/')[2]
+
+        //             fetch(`/remote/posts/${host}/${post.author.displayName}/${postId}/comments/`, {
+        //                 method: 'POST',
+        //                 headers: {
+        //                     'X-CSRFToken': getCookie('csrftoken'),
+        //                     'Content-Type': 'application/json'
+        //                 },
+        //                 body: JSON.stringify({ comment_text: commentText })
+        //             })
+        //                 .then(response => {
+        //                     if (!response.ok) {
+        //                         throw new Error(`HTTP error! status: ${response.status}`);
+        //                     }
+        //                     return response.json();
+        //                 })
+        //                 .then(() => {
+        //                     document.getElementById('comment-modal').style.display = 'none';
+        //                     document.getElementById('comment-text').value = ''; // clear the input box
+        //                     alert('Success posting comment.');
+        //                 })
+        //                 .catch(error => {
+        //                     console.error('Error:', error);
+        //                     alert('Error posting comment.');
+        //                 });
+        //             commentModal.style.display = 'none';
+        //             commentInput.value = '';
+        //         });
+        //     });
+        // }
+        // cancelCommentButton.addEventListener('click', () => {
+        //     console.log("cancel button clicked");
+        //     commentInput.value = ''; // clear the input box
+        // });
+
+        // comment listener
         const commentButton = postElement.querySelector(`button[data-post-id="${post.id}"]`);
-        const commentModal = document.getElementById(`comment-modal-${post.id}`);
-        const submitCommentButton = document.getElementById(`submit-comment-${post.id}`);
-        const cancelCommentButton = document.getElementById(`cancel-comment-${post.id}`);
-        const commentInput = document.getElementById(`comment-text-${post.id}`);
         if (commentButton) {
             commentButton.addEventListener('click', function() {
-
-                // display the input box
-                commentModal.style.display = commentModal.style.display === 'block' ? 'none' : 'block';
-
-                // submitCommentButton.setAttribute('data-post-id', post.id);
-                submitCommentButton.addEventListener('click', () => {
-                    const commentText = commentInput.value.trim();
-                    if (commentText === '') {
-                        alert('Please enter a comment.');
-                        return;
-                    }
-
-                    let postId = post.id.split('/').slice(-1)[0]
-                    let host = post.author.host.split('/')[2]
-
-                    fetch(`/remote/posts/${host}/${post.author.displayName}/${postId}/comments/`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': getCookie('csrftoken'),
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ comment_text: commentText })
-                    })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            return response.json();
-                        })
-                        .then(() => {
-                            document.getElementById('comment-modal').style.display = 'none';
-                            document.getElementById('comment-text').value = ''; // clear the input box
-                            alert('Success posting comment.');
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('Error posting comment.');
-                        });
-                    commentModal.style.display = 'none';
-                    commentInput.value = '';
-                });
+                const commentForm = postElement.querySelector('.comment-form');
+                commentForm.style.display = 'block';
             });
         }
+
+        const cancelCommentButton = postElement.querySelector('.cancel-comment');
         cancelCommentButton.addEventListener('click', () => {
-            console.log("cancel button clicked");
-            commentInput.value = ''; // clear the input box
+            const commentForm = postElement.querySelector('.comment-form');
+            commentForm.style.display = 'none';
+            commentFormDiv.querySelector('.comment-text').value = '';
         });
 
-        const likeButton = document.getElementById(`like-${post.id}`)
-        likeButton.addEventListener('click', () => {
-            console.log(post)
-
+        const submitCommentButton = postElement.querySelector('.submit-comment');
+        submitCommentButton.addEventListener('click', () => {
             let postId = post.id.split('/').slice(-1)[0]
-            let host = post.author.host.split('/')[2]
-            console.log(postId)
-            fetch(`/remote/posts/${host}/${post.author.displayName}/${postId}/like/`, {
+            // const postId = post.id;
+            // const postUsername = post.username;
+            const postUsername = post.author.displayName;
+            const serverName = '200OK';
+            const commentText = commentFormDiv.querySelector('.comment-text').value.trim();
+            if (commentText === '') {
+                alert('Please enter a comment.');
+                return;
+            }
+
+            const remoteCommentURL = `/remote/posts/${serverName}/${postUsername}/${postId}/comments/`;
+            fetch(remoteCommentURL, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
                     'Content-Type': 'application/json'
                 },
+                body: JSON.stringify({ comment_text: commentText })
             })
                 .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
                     return response.json();
                 })
-                .then((data) => {
-                    if (data.message){
-                        alert('Success posting Like.');
-                        let like = document.getElementById(`${postId}-like-count`)
-                        like.innerText = like.innerText + 1
-                        let likeBtn = document.getElementById(`${postId}-like-style`)
-                        likeBtn.innerText = ''
-                    }else{
-                        alert(`${data.error || data.detail}`);
-                    }
+                .then(() => {
+                    const commentForm = postElement.querySelector('.comment-form');
+                    commentForm.style.display = 'none';
+                    commentFormDiv.querySelector('.comment-text').value = '';
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error posting Like.');
+                    alert('Error posting comment.');
                 });
+        });
+
+        // like listener
+        const likeButton = document.getElementById(`like-${post.id}`)
+        likeButton.addEventListener('click', () => {
+            console.log(post)
+
+            toggleLikeRemote('200OK', post.author.displayName, post.id)
+
+            // toggleLikeRemote('hero', post.username, post.id)
+            // console.log(postId)
+            // fetch(`/remote/posts/${host}/${post.author.displayName}/${postId}/like/`, {
+            //     method: 'POST',
+            //     headers: {
+            //         'X-CSRFToken': getCookie('csrftoken'),
+            //         'Content-Type': 'application/json'
+            //     },
+            // })
+            //     .then(response => {
+            //         return response.json();
+            //     })
+            //     .then((data) => {
+            //         if (data.message){
+            //             alert('Success posting Like.');
+            //             let like = document.getElementById(`${postId}-like-count`)
+            //             like.innerText = like.innerText + 1
+            //             let likeBtn = document.getElementById(`${postId}-like-style`)
+            //             likeBtn.innerText = ''
+            //         }else{
+            //             alert(`${data.error || data.detail}`);
+            //         }
+            //     })
+            //     .catch(error => {
+            //         console.error('Error:', error);
+            //         alert('Error posting Like.');
+            //     });
         })
     });
     sortPostsByDate();

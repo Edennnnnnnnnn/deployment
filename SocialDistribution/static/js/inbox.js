@@ -108,7 +108,7 @@ function createBlock(msg, type, isNewMsg = true) {
     let div_messageBody = document.createElement("div");
     div_messageBody.classList.add("message-body");
     let p_content = document.createElement("p");
-    p_content.textContent = msg.content;
+    p_content.innerHTML = `${msg.content}`;
     p_content.classList.add("message-text");
     div_messageBody.appendChild(p_content);
 
@@ -155,7 +155,7 @@ function createBlock(msg, type, isNewMsg = true) {
         div_messageBody.appendChild(acceptButton);
         div_messageBody.appendChild(rejectButton);
     }
-
+    
     // Inbox Delete btn
     let button_delete = document.createElement("button");
     button_delete.classList.add("inbox-delete-btn");

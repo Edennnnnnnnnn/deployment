@@ -230,7 +230,6 @@ def indexView(request):
                             remote_posts["200OK"].extend(posts)
                             for post_data in posts:
                                 print("post data:", post_data)
-                                # 提取远程帖子信息并创建 ProjPost 实例
                                 title = post_data.get('title')
                                 content = post_data.get('content')
                                 content_type = post_data.get('content_type', 'PLAIN').upper()
@@ -238,7 +237,7 @@ def indexView(request):
                                 image_data = post_data.get('image_data', '')
                                 remote_post_id = post_data.get('id')
                                 remote_post_id = remote_post_id.split('/')[-1]
-                                # 创建 ProjPost 实例
+                                # create projpost instance
                                 proj_post, proj_created = ProjPost.objects.get_or_create(
                                     remote_post_id=remote_post_id,
                                     defaults={
@@ -249,7 +248,6 @@ def indexView(request):
                                         'image_data': image_data,
                                         'proj_author': proj_user,
                                         'date_posted': timezone.now(),
-                                        # 其他需要设置的字段...
                                     }
                                 )
                                 if proj_created:
@@ -305,14 +303,13 @@ def indexView(request):
                             posts_data = posts_response.json().get('posts')
                             for post_data in posts_data:
                                 print("post data:", post_data)
-                                # 提取远程帖子信息并创建 ProjPost 实例
                                 title = post_data.get('title')
                                 content = post_data.get('content')
                                 content_type = post_data.get('content_type', 'PLAIN').upper()
                                 visibility = post_data.get('visibility', 'PUBLIC').upper()
                                 image_data = post_data.get('image_data', '')
                                 remote_post_id = post_data.get('id')
-                                # 创建 ProjPost 实例
+                                # create projpost instance
                                 proj_post, proj_created = ProjPost.objects.get_or_create(
                                     remote_post_id=remote_post_id,
                                     defaults={
@@ -323,7 +320,6 @@ def indexView(request):
                                         'image_data': image_data,
                                         'proj_author': proj_user,
                                         'date_posted': timezone.now(),
-                                        # 其他需要设置的字段...
                                     }
                                 )
                                 if proj_created:
@@ -441,16 +437,16 @@ class FPsAPIView(generics.ListAPIView):
             Q(author__in=friends, visibility='PUBLIC') |
             Q(author__in=friends, visibility='FRIENDS'), is_draft=False
         )
-
+        
         # Get query set of current user's PUBLIC and FRIENDS posts
         user_posts = Post.objects.filter(
             Q(author=current_user, visibility='PUBLIC') |
             Q(author=current_user, visibility='FRIENDS'), is_draft=False
         )
-
         # Combine and order posts
         posts = user_following_posts | friend_posts | user_posts
         posts = posts.distinct().order_by('-date_posted')
+        
 
         return posts
 
@@ -1507,6 +1503,7 @@ def followRequesting(request, remoteNodename, requester_username, proj_username)
         f'/accept-remote-follow/{remoteNodename}/{requester_username}/{proj_username}/')
     FRRejectURL = request.build_absolute_uri(
         f'/reject-remote-follow/{remoteNodename}/{requester_username}/{proj_username}/')
+
     requestContent_accept = f'click_to_accept_[{FRAcceptURL}]'
     requestContent_reject = f'click_to_reject_[{FRRejectURL}]'
 
@@ -1571,6 +1568,10 @@ def followRequesting(request, remoteNodename, requester_username, proj_username)
     elif remoteNodename == "200OK":
         print(remoteNodename)
         print(remoteInbox)
+
+        print(f"https://{request.get_host()}/api/users/{user.uuid}",'--id')
+        print(request.get_host(),'--host')
+
         headers = {
             'Content-Type': 'application/json',
             'X-CSRFToken': get_token(request)
@@ -1642,7 +1643,10 @@ def followRequesting(request, remoteNodename, requester_username, proj_username)
             "message_type": "FR",
             "owner": proj_username,
             "origin": f"{requester_username} from Server `HTML HEROES`",
-            "content": f"{requester_username} from Server `HTML HEROES` wants to follow you remotely, you may accept it by clicking {requestContent_accept}, or reject it by clicking {requestContent_reject}.",
+            # "content": f"{requester_username} from Server `HTML HEROES` wants to follow you remotely, you may accept it by {requestContent_accept}, or reject it by {requestContent_reject}.",
+            "content": f"""{requester_username} from Server `HTML HEROES` wants to follow you remotely, 
+                you may click to <a href="{FRAcceptURL}" id="acceptLink" data-msg-id="{msgId}" target="_blank">accept it</a> or 
+                <a href="{FRRejectURL}" id="rejectLink" data-msg-id="{msgId}" target="_blank">reject it</a>.(Do not use the accept/reject buttons below)""",
         }
         response = requests.post(remoteInbox, headers=headers, auth=auth, json=body)
         try:
@@ -1781,12 +1785,13 @@ def rejectRemoteFollowRequest(request, remoteNodename, user_username, proj_usern
 @api_view(['POST'])
 def remoteComment(request, remote_node_host, proj_username, post_id):
     print("----------------------------COMMENT-----------------------------")
-    
     # Retrieve the host
-    host = get_object_or_404(Host, host__contains=remote_node_host)
-    
+    host = get_object_or_404(Host, name=remote_node_host)
+    print(host.name)
     # Retrieve the user making the comment
-    user = request.user
+    # user = request.user
+    user = get_object_or_404(User, username=request.user.username)
+    # print(user.uuid)
     
     # Retrieve the project user and post
     proj_user = get_object_or_404(ProjUser, username=proj_username, hostname=host.name)
@@ -1794,17 +1799,79 @@ def remoteComment(request, remote_node_host, proj_username, post_id):
     
     remoteInbox = proj_user.remoteInbox
 
-    comment_text = request.data.get('comment_text')
-    if not comment_text:
-        return Response({'error': 'Comment text is required.'}, status=status.HTTP_400_BAD_REQUEST)
-
     if host.name == "enjoy":
         pass
-
+        
     elif host.name == "200OK":
-        pass
+        comment_text = request.data.get('comment_text')
+        print(comment_text)
+        if not comment_text:
+            return Response({'error': 'Comment text is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        proj_comment = RemoteComment.objects.create(
+            proj_post=proj_post,
+            commenter=user,
+            comment_text=comment_text
+        )
+
+        print(proj_comment.uuid)
+        print(f"https://{request.get_host()}")
+        print(remoteInbox)
+        print(f"https://{request.get_host()}/api/users/{user.uuid}",'--id')
+        print(request.get_host(),'--host')
+        print(user.username)
+        print(datetime.now().isoformat())
+        print('id:',f"https://{request.get_host()}/api/authors/{user.uuid}/posts/{post_id}/comments/{proj_comment.uuid}")
+
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': get_token(request)
+        }
+
+        body = {
+            "type": "comment",
+            "author": {
+                "type": "author",
+                "id": f"https://{request.get_host()}/api/users/{user.uuid}",
+                "host": request.get_host(),
+                "displayName": user.username,
+                "url": f"https://{request.get_host()}/api/users/{user.uuid}",                
+                "github": "",
+                "profileImage": ""
+            },
+                "comment": comment_text,
+                "contentType": "text/plain",
+                "published": datetime.now().isoformat(),
+                "id": f"https://{request.get_host()}/api/authors/{user.uuid}/posts/{post_id}/comments/{proj_comment.uuid}"
+        }   
+
+        response = requests.post(
+            remoteInbox,
+            json=body,
+            headers=headers,
+            auth=HTTPBasicAuth(host.username, host.password)
+        )
+        if response.status_code == 200:
+            # Successfully posted comment to remote server, save a local copy
+
+            # RemoteComment.objects.create(
+            #     proj_post=proj_post,
+            #     commenter=user,
+            #     comment_text=comment
+            # )
+            return Response({"message": "Comment posted successfully."}, status=response.status_code)
+        else:
+            # Handle failure scenarios
+            error_message = response.json().get('error', 'Failed to post comment to remote server.')
+            return Response({"error": error_message}, status=response.status_code)
     
     else:
+        comment_text = request.data.get('comment_text')
+        print(comment_text)
+        if not comment_text:
+            return Response({'error': 'Comment text is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
         # Construct the header and body for the POST request to the remote server
         credentials = base64.b64encode(f'{host.username}:{host.password}'.encode('utf-8')).decode('utf-8')
         headers = {
@@ -1838,7 +1905,7 @@ def remoteComment(request, remote_node_host, proj_username, post_id):
             # Handle failure scenarios
             error_message = response.json().get('error', 'Failed to post comment to remote server.')
             return Response({"error": error_message}, status=response.status_code)
-            
+
 
 # @require_POST
 # def remoteLike(request, remoteNodename, proj_username, post_id):
@@ -1899,9 +1966,17 @@ def remoteComment(request, remote_node_host, proj_username, post_id):
 def remoteLike(request, remote_node_host, proj_username, post_id):
     print("--------------------------LIKE-----------------------------")
     print(post_id)
+    print(remote_node_host)
+    host = get_object_or_404(Host, name=remote_node_host)
+    print(host.name)
+    # host = get_object_or_404(Host, host_url=remote_node_host)
+    # host = get_object_or_404(Host, host__contains=remote_node_host)
+    # hosts = Host.objects.filter(host__contains=remote_node_host)
+    # if not hosts.exists():
+    #     return Response({'error': 'Host not found'}, status=404)
+    # host = hosts.first()
 
-    host = get_object_or_404(Host, host__contains=remote_node_host)
-    print('host_username:', host.username, "host_password:", host.password)
+    print('host_username:', host.name, "host_password:", host.password)
 
     # Get the user who is liking the post
     user = request.user
@@ -1943,13 +2018,22 @@ def remoteLike(request, remote_node_host, proj_username, post_id):
                 "profilelmage": ""
             },
             "object": request.build_absolute_uri(f"/api/authors/{user.uuid}/posts/{post_id}"),
-            "summary": f"{proj_username} liked your post"
+            # "summary": f"{proj_username} liked your post"
+            "summary": f"{user.username} from Server `HTML HEROES` liked your post.",
         }
         response = requests.post(remoteInbox, json=body, headers=headers)
         try:
             if response.status_code == 200:
                 data = response.json()
-                RemoteLike.objects.get_or_create(proj_post=proj_post, liker=user)
+                # RemoteLike.objects.get_or_create(proj_post=proj_post, liker=user)
+
+                RemoteLike.objects.create(liker=user, proj_post=proj_post)
+                # proj_post.refresh_from_db()
+                likes_count = proj_post.remote_likes.count()
+                response_data = {
+                    'likes_count': likes_count,
+                }
+
                 print('Message created successfully:', data)
                 return Response({"message": "Like Reminder created successfully.", "data": data},
                                 status=status.HTTP_200_OK)
@@ -2029,6 +2113,9 @@ def remoteLike(request, remote_node_host, proj_username, post_id):
 
 @api_view(['GET'])
 def check_remote_like_status(request, remoteNodeName, projUsername, postId):
+    print('--------------------------------check-like--------------------------------')
+    print(remoteNodeName, projUsername, postId)
+
     """
     Check if the user liked the remote post and return the like count.
     """

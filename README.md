@@ -7,6 +7,8 @@ See [the web page](https://uofa-cmput404.github.io/general/project.html) for a d
 
 Make a distributed social network!
 
+You can find the API documentation [here](http://localhost:8000/swagger/).
+
 Contributing
 ============
 

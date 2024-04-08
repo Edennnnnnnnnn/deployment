@@ -125,9 +125,9 @@ class RemoteLikeAdmin(admin.ModelAdmin):
     search_fields = ('proj_post__title', 'liker__username')
 
 class RemoteCommentAdmin(admin.ModelAdmin):
-    list_display = ('proj_post', 'commenter', 'date_commented', 'comment_text_short')
+    list_display = ('uuid', 'proj_post', 'commenter', 'date_commented', 'comment_text_short')
     list_filter = ('date_commented',)
-    search_fields = ('proj_post__title', 'commenter__username', 'comment_text')
+    search_fields = ('uuid', 'proj_post__title', 'commenter__username', 'comment_text')
 
     def comment_text_short(self, obj):
         """A method to shorten the comment text in the list display."""
@@ -149,6 +149,6 @@ admin.site.register(ServerNode, ServerNodeAdmin)
 admin.site.register(Host, HostAdmin)
 admin.site.register(ProjUser, ProjUserAdmin)
 admin.site.register(ProjPost, ProjPostAdmin)
-admin.site.register(RemoteLike)
-admin.site.register(RemoteComment)
+admin.site.register(RemoteLike, RemoteLikeAdmin)
+admin.site.register(RemoteComment, RemoteCommentAdmin)
 

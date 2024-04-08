@@ -110,7 +110,7 @@ urlpatterns = [
 
     path("remote/posts/<str:remote_node_host>/<str:proj_username>/<str:post_id>/comments/", views.remoteComment, name='REMOTE_PComms'),
     path("remote/posts/<str:remote_node_host>/<str:proj_username>/<str:post_id>/like/", views.remoteLike, name='REMOTE_PLikes'),
-    path('remote/posts/<str:remoteNodeName>/<str:projUsername>/<int:postId>/check-like/', check_remote_like_status, name='check-remote-like-status'),
+    path('remote/posts/<str:remoteNodeName>/<str:projUsername>/<str:postId>/check-like/', check_remote_like_status, name='check-remote-like-status'),
     path('remote/msgs/create/', CreateRemoteMessageAPIView.as_view(), name='API_POSTUserMsg'),
 
     # API docs

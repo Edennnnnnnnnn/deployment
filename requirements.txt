@@ -12,3 +12,4 @@ commonmark
 requests
 django-background-tasks
 drf_yasg
+Pillow

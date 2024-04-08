@@ -159,3 +159,15 @@ h1, h2 {
     color: #535353;
     font-size: 17px;
 }
+
+#acceptLink {
+    color: green; 
+    text-decoration: underline;
+    font-style: italic;
+}
+
+#rejectLink{
+    color: red; 
+    text-decoration: underline;
+    font-style: italic;
+}

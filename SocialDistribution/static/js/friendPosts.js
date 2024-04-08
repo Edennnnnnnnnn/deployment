@@ -1,14 +1,14 @@
 'use strict';
 
 import {formatDate} from "./common.js";
+
 document.addEventListener('DOMContentLoaded', async () => {
     const username = _getURLUsername()
-
-
+    console.log('@Friends Posts:');
     fetch(`/api/fps/${username}/`)
         .then(response => response.json())
         .then(posts => {
-            console.log('Friends List:', posts);
+            console.log('Friends Posts:', posts);
             const postContainer = document.getElementById('post-container');
             posts.forEach(post => {
                 const postElement = document.createElement('div');

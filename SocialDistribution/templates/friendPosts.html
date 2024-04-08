@@ -28,16 +28,17 @@
 
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-    <!-- <script src="{% static 'js/friendPosts.js' %}"></script> -->
+
+    <script src="{% static 'js/friendPosts.js' %}"></script>
     <script src="{% static 'js/posting.js' %}"></script>
-    <script src="{% static 'js/search.js' %}"></script>
+    <!-- <script src="{% static 'js/search.js' %}"></script> -->
 
     <script type="module">
         import {
             createRemotePostBlocks_0_enjoy,
             createRemotePostBlocks_1_200OK,
             createRemotePostBlocks_2_hero
-        } from '{% static 'js/index.js' %}';
+        } from '{% static 'js/friendPosts.js' %}';
         var remotePosts = {{ posts|safe }};
         createRemotePostBlocks_0_enjoy(remotePosts["enjoy"]);
         createRemotePostBlocks_1_200OK(remotePosts["200OK"]);
