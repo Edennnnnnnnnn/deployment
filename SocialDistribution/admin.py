@@ -125,15 +125,14 @@ class RemoteLikeAdmin(admin.ModelAdmin):
     search_fields = ('proj_post__title', 'liker__username')
 
 class RemoteCommentAdmin(admin.ModelAdmin):
-    list_display = ('uuid', 'proj_post', 'commenter', 'date_commented', 'comment_text_short')
+    list_display = ('proj_post', 'commenter', 'date_commented', 'comment_text_short')
     list_filter = ('date_commented',)
-    search_fields = ('uuid', 'proj_post__title', 'commenter__username', 'comment_text')
+    search_fields = ('proj_post__title', 'commenter__username', 'comment_text')
 
     def comment_text_short(self, obj):
         """A method to shorten the comment text in the list display."""
         return obj.comment_text[:50] + '...' if len(obj.comment_text) > 50 else obj.comment_text
     comment_text_short.short_description = 'Comment Text'
-
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Post, PostAdmin)

@@ -323,7 +323,6 @@ class RemoteLike(models.Model):
         ordering = ['-date_liked']
 
 class RemoteComment(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     proj_post = models.ForeignKey(ProjPost, on_delete=models.CASCADE, related_name='remote_comments', default=99999)
     commenter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='remote_commenters', default=0)
     date_commented = models.DateTimeField(auto_now_add=True)

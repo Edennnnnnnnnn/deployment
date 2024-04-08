@@ -1798,10 +1798,7 @@ def remoteComment(request, remote_node_host, proj_username, post_id):
     proj_post = get_object_or_404(ProjPost, proj_author__username=proj_username, proj_author__hostname=host.name, remote_post_id=post_id)
     
     remoteInbox = proj_user.remoteInbox
-
-    if host.name == "enjoy":
-        pass
-        
+    """
     elif host.name == "200OK":
         comment_text = request.data.get('comment_text')
         print(comment_text)
@@ -1823,7 +1820,7 @@ def remoteComment(request, remote_node_host, proj_username, post_id):
         print(datetime.now().isoformat())
         print('id:',f"https://{request.get_host()}/api/authors/{user.uuid}/posts/{post_id}/comments/{proj_comment.uuid}")
 
-        
+
         headers = {
             'Content-Type': 'application/json',
             'X-CSRFToken': get_token(request)
@@ -1861,11 +1858,15 @@ def remoteComment(request, remote_node_host, proj_username, post_id):
             #     comment_text=comment
             # )
             return Response({"message": "Comment posted successfully."}, status=response.status_code)
+
         else:
-            # Handle failure scenarios
-            error_message = response.json().get('error', 'Failed to post comment to remote server.')
-            return Response({"error": error_message}, status=response.status_code)
-    
+        # Handle failure scenarios
+        error_message = response.json().get('error', 'Failed to post comment to remote server.')
+        return Response({"error": error_message}, status=response.status_code)
+    """
+    if host.name == "enjoy":
+        pass
+
     else:
         comment_text = request.data.get('comment_text')
         print(comment_text)
