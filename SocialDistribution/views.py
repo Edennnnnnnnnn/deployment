@@ -1645,8 +1645,8 @@ def followRequesting(request, remoteNodename, requester_username, proj_username)
             "origin": f"{requester_username} from Server `HTML HEROES`",
             # "content": f"{requester_username} from Server `HTML HEROES` wants to follow you remotely, you may accept it by {requestContent_accept}, or reject it by {requestContent_reject}.",
             "content": f"""{requester_username} from Server `HTML HEROES` wants to follow you remotely, 
-                you may click to <a href="{FRAcceptURL}" id="acceptLink" data-msg-id="{msgId}" target="_blank">accept it</a> or 
-                <a href="{FRRejectURL}" id="rejectLink" data-msg-id="{msgId}" target="_blank">reject it</a>.(Do not use the accept/reject buttons below)""",
+                you may click to <a href="{FRAcceptURL}" id="acceptLink"  target="_blank">accept it</a> or 
+                <a href="{FRRejectURL}" id="rejectLink"  target="_blank">reject it</a>.(Do not use the accept/reject buttons below)""",
         }
         response = requests.post(remoteInbox, headers=headers, auth=auth, json=body)
         try:
